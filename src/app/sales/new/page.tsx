@@ -629,7 +629,7 @@ export default function CreateBillPage() {
                         .filter((b) => b.isActive || b.name === cementType)
                         .map((b) => (
                           <option key={b.id} value={b.name}>
-                            {b.name} {b.defaultRate ? `(₹${b.defaultRate}/bag)` : ""}
+                            {b.name}
                           </option>
                         ))}
                     </select>
@@ -702,7 +702,7 @@ export default function CreateBillPage() {
                         .filter((s) => s.isActive || s.size === rodSize)
                         .map((s) => (
                           <option key={s.id} value={s.size}>
-                            {s.size} {s.defaultRate ? `(₹${s.defaultRate}/kg)` : ""}
+                            {s.size}
                           </option>
                         ))}
                     </select>

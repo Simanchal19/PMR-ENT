@@ -1,9 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getBills, getPayments, getReturns, getCashTransactions, getCustomers } from "@/lib/storage";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { BarChart3, TrendingUp, PieChart, Download, Printer, ShieldCheck } from "lucide-react";
+import {
+  getBills,
+  getPayments,
+  getReturns,
+  getCashTransactions,
+  getCustomers,
+  calculatePurchaseMetrics,
+  reconcileAllSuppliers,
+  PurchaseSummaryMetrics,
+} from "@/lib/storage";
+import { Supplier } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
+import { Printer } from "lucide-react";
 
 export default function ReportsPage() {
   const [bills, setBills] = useState<any[]>([]);
@@ -11,21 +21,38 @@ export default function ReportsPage() {
   const [returns, setReturns] = useState<any[]>([]);
   const [cashTxs, setCashTxs] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [purchaseMetrics, setPurchaseMetrics] = useState<PurchaseSummaryMetrics | null>(null);
 
   useEffect(() => {
-    setBills(getBills());
-    setPayments(getPayments());
-    setReturns(getReturns());
-    setCashTxs(getCashTransactions());
-    setCustomers(getCustomers());
+    const loadAll = () => {
+      setBills(getBills());
+      setPayments(getPayments());
+      setReturns(getReturns());
+      setCashTxs(getCashTransactions());
+      setCustomers(getCustomers());
+      setSuppliers(reconcileAllSuppliers());
+      setPurchaseMetrics(calculatePurchaseMetrics());
+    };
+    loadAll();
+    window.addEventListener("tpm_data_updated", loadAll);
+    return () => window.removeEventListener("tpm_data_updated", loadAll);
   }, []);
 
   const grossSales = bills.filter(b => b.status === "posted").reduce((acc, b) => acc + (b.total_amount || 0), 0);
   const approvedReturns = returns.filter(r => r.status === "approved" || r.is_verified).reduce((acc, r) => acc + (r.amount || 0), 0);
   const netSales = grossSales - approvedReturns;
 
+  const netPurchases = purchaseMetrics?.net_purchases || 0;
+
   const verifiedExpenses = cashTxs
-    .filter(c => c.is_categorized && c.category !== "Godown Transfer" && c.category !== "Uncategorized Outflow")
+    .filter(
+      c =>
+        c.is_categorized &&
+        c.category !== "Godown Transfer" &&
+        c.category !== "Supplier Payment" &&
+        c.category !== "Uncategorized Outflow"
+    )
     .reduce((acc, c) => acc + (c.amount || 0), 0);
 
   // Cement brand analysis
@@ -92,18 +119,23 @@ export default function ReportsPage() {
             <span className="text-blue-700">{formatCurrency(netSales)}</span>
           </div>
 
-          <div className="flex justify-between py-1 text-slate-600 pt-2">
-            <span>Verified Operating & Shop Expenses</span>
-            <span className="font-semibold">{formatCurrency(verifiedExpenses)}</span>
+          <div className="flex justify-between py-1 text-slate-700 pt-2">
+            <span>Less: Net Stock Purchases (Cement, TMT Rod & Electrical Inward)</span>
+            <span className="font-semibold text-amber-800">-{formatCurrency(netPurchases)}</span>
+          </div>
+
+          <div className="flex justify-between py-1 text-slate-600">
+            <span>Less: Verified Operating & Shop Expenses</span>
+            <span className="font-semibold">-{formatCurrency(verifiedExpenses)}</span>
           </div>
           <div className="flex justify-between py-1 text-slate-400 italic text-[11px]">
-            <span>(Note: Godown transfers & uncategorized cash are excluded from expenses)</span>
+            <span>(Note: Godown transfers, supplier cash payments & uncategorized cash are excluded from expenses)</span>
             <span>—</span>
           </div>
 
           <div className="flex justify-between py-2 border-t-2 border-slate-900 font-bold text-base text-emerald-700 pt-2">
-            <span>OPERATING SURPLUS / GROSS MARGIN</span>
-            <span>{formatCurrency(netSales - verifiedExpenses)}</span>
+            <span>OPERATING SURPLUS / NET TRADING MARGIN</span>
+            <span>{formatCurrency(netSales - netPurchases - verifiedExpenses)}</span>
           </div>
         </div>
       </div>
@@ -185,6 +217,39 @@ export default function ReportsPage() {
                   </tr>
                 ))
               )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Supplier Payables Summary */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="p-5 border-b border-slate-200">
+          <h3 className="font-bold text-slate-900 text-sm">Supplier Accounts Payable Ledger Summary</h3>
+          <p className="text-xs text-slate-500">Vendor purchase totals, payments settled, and net payable obligations</p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px]">
+              <tr>
+                <th className="py-3 px-4">Supplier Name</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4 text-right">Total Purchased</th>
+                <th className="py-3 px-4 text-right">Total Paid</th>
+                <th className="py-3 px-4 text-right">Net Payable Due</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {suppliers.map((sup) => (
+                <tr key={sup.id} className="hover:bg-slate-50/70">
+                  <td className="py-3 px-4 font-bold text-slate-900">{sup.name}</td>
+                  <td className="py-3 px-4 uppercase text-[10px] font-bold text-slate-500">{sup.supply_category}</td>
+                  <td className="py-3 px-4 text-right font-medium text-slate-800">{formatCurrency(sup.total_purchases_amount)}</td>
+                  <td className="py-3 px-4 text-right font-medium text-emerald-700">{formatCurrency(sup.total_paid_amount)}</td>
+                  <td className="py-3 px-4 text-right font-black text-rose-600 text-sm">{formatCurrency(sup.current_balance)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

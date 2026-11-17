@@ -14,7 +14,14 @@ import {
   RodSize,
   PaymentModeOption,
   ExpenseCategoryOption,
-  BusinessProfile
+  BusinessProfile,
+  Supplier,
+  PurchaseBill,
+  SupplierPayment,
+  SupplierPaymentAllocation,
+  PurchaseReturn,
+  StockItemSummary,
+  PaymentMode
 } from "./types";
 import { DateRange, isDateInRange } from "./period";
 
@@ -31,6 +38,10 @@ const STORAGE_KEYS = {
   PAYMENT_MODES: "tpm_payment_modes_v1",
   EXPENSE_CATEGORIES: "tpm_expense_categories_v1",
   BUSINESS_PROFILE: "tpm_business_profile_v1",
+  SUPPLIERS: "tpm_suppliers_v1",
+  PURCHASE_BILLS: "tpm_purchase_bills_v1",
+  SUPPLIER_PAYMENTS: "tpm_supplier_payments_v1",
+  PURCHASE_RETURNS: "tpm_purchase_returns_v1",
 };
 
 // Safe browser local-storage check
@@ -281,7 +292,8 @@ export function resetAllDataToSeed() {
       "tpm_customers_v3", "tpm_bills_v3", "tpm_payments_v3", "tpm_returns_v3", "tpm_cash_given_v3",
       STORAGE_KEYS.CUSTOMERS, STORAGE_KEYS.BILLS, STORAGE_KEYS.PAYMENTS, STORAGE_KEYS.RETURNS, STORAGE_KEYS.CASH_GIVEN, STORAGE_KEYS.AUDIT_LOGS,
       STORAGE_KEYS.CEMENT_BRANDS, STORAGE_KEYS.ROD_SIZES, STORAGE_KEYS.PAYMENT_MODES, STORAGE_KEYS.EXPENSE_CATEGORIES,
-      STORAGE_KEYS.BUSINESS_PROFILE
+      STORAGE_KEYS.BUSINESS_PROFILE,
+      STORAGE_KEYS.SUPPLIERS, STORAGE_KEYS.PURCHASE_BILLS, STORAGE_KEYS.SUPPLIER_PAYMENTS, STORAGE_KEYS.PURCHASE_RETURNS
     ];
     keysToRemove.forEach(k => localStorage.removeItem(k));
     window.dispatchEvent(new Event("tpm_data_updated"));
@@ -295,6 +307,10 @@ export function clearAllData() {
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.RETURNS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.CASH_GIVEN, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.PURCHASE_BILLS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.SUPPLIER_PAYMENTS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.PURCHASE_RETURNS, JSON.stringify([]));
     window.dispatchEvent(new Event("tpm_data_updated"));
   }
 }
@@ -1213,7 +1229,7 @@ export function saveCementBrands(brands: CementBrand[]): void {
 }
 
 export function addCementBrand(
-  data: { name: string; defaultRate?: number; notes?: string },
+  data: { name: string; defaultRate?: number; openingStock?: number; notes?: string },
   actor?: string
 ): { success: boolean; brand?: CementBrand; error?: string } {
   const name = (data.name || "").trim().toUpperCase();
@@ -1230,6 +1246,7 @@ export function addCementBrand(
     id: `cb-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     name,
     defaultRate: Number(data.defaultRate) || 0,
+    openingStock: Number(data.openingStock) || 0,
     isActive: true,
     notes: data.notes?.trim() || "",
     updatedAt: new Date().toISOString(),
@@ -1242,7 +1259,7 @@ export function addCementBrand(
     action: "ADD_CEMENT_BRAND",
     entity: `Cement Brand: ${name}`,
     actor: actor || "System Administrator (Admin Account)",
-    notes: `Configured new cement brand "${name}" with default rate ₹${newBrand.defaultRate}/bag.`,
+    notes: `Configured new cement brand "${name}" with default rate ₹${newBrand.defaultRate}/bag${newBrand.openingStock ? ` and opening stock ${newBrand.openingStock} bags` : ""}.`,
   });
 
   return { success: true, brand: newBrand };
@@ -1250,7 +1267,7 @@ export function addCementBrand(
 
 export function updateCementBrand(
   id: string,
-  updates: Partial<Pick<CementBrand, "name" | "defaultRate" | "isActive" | "notes">>,
+  updates: Partial<Pick<CementBrand, "name" | "defaultRate" | "openingStock" | "isActive" | "notes">>,
   actor?: string
 ): { success: boolean; brand?: CementBrand; error?: string } {
   const brands = getCementBrands();
@@ -1270,6 +1287,7 @@ export function updateCementBrand(
     ...oldBrand,
     name: newName,
     defaultRate: updates.defaultRate !== undefined ? Number(updates.defaultRate) : oldBrand.defaultRate,
+    openingStock: updates.openingStock !== undefined ? Number(updates.openingStock) : (oldBrand.openingStock || 0),
     isActive: updates.isActive !== undefined ? updates.isActive : oldBrand.isActive,
     notes: updates.notes !== undefined ? updates.notes.trim() : oldBrand.notes,
     updatedAt: new Date().toISOString(),
@@ -1282,7 +1300,7 @@ export function updateCementBrand(
     action: "UPDATE_CEMENT_BRAND",
     entity: `Cement Brand: ${updatedBrand.name}`,
     actor: actor || "System Administrator (Admin Account)",
-    notes: `Updated brand "${oldBrand.name}"${newName !== oldBrand.name ? ` to "${newName}"` : ""}. Rate: ₹${updatedBrand.defaultRate}, Status: ${updatedBrand.isActive ? "Active" : "Inactive"}.`,
+    notes: `Updated brand "${oldBrand.name}"${newName !== oldBrand.name ? ` to "${newName}"` : ""}. Rate: ₹${updatedBrand.defaultRate}, Opening Stock: ${updatedBrand.openingStock || 0} Bags, Status: ${updatedBrand.isActive ? "Active" : "Inactive"}.`,
   });
 
   return { success: true, brand: updatedBrand };
@@ -1337,7 +1355,7 @@ export function saveRodSizes(sizes: RodSize[]): void {
 }
 
 export function addRodSize(
-  data: { size: string; defaultRate?: number; notes?: string },
+  data: { size: string; defaultRate?: number; openingStock?: number; notes?: string },
   actor?: string
 ): { success: boolean; size?: RodSize; error?: string } {
   const size = (data.size || "").trim();
@@ -1354,6 +1372,7 @@ export function addRodSize(
     id: `rs-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     size,
     defaultRate: Number(data.defaultRate) || 0,
+    openingStock: Number(data.openingStock) || 0,
     isActive: true,
     notes: data.notes?.trim() || "",
     updatedAt: new Date().toISOString(),
@@ -1366,7 +1385,7 @@ export function addRodSize(
     action: "ADD_ROD_SIZE",
     entity: `Rod Size: ${size}`,
     actor: actor || "System Administrator (Admin Account)",
-    notes: `Added rod specification "${size}" with default rate ₹${newSize.defaultRate}/Kg.`,
+    notes: `Added rod specification "${size}" with default rate ₹${newSize.defaultRate}/Kg${newSize.openingStock ? ` and opening stock ${newSize.openingStock} Kg` : ""}.`,
   });
 
   return { success: true, size: newSize };
@@ -1374,7 +1393,7 @@ export function addRodSize(
 
 export function updateRodSize(
   id: string,
-  updates: Partial<Pick<RodSize, "size" | "defaultRate" | "isActive" | "notes">>,
+  updates: Partial<Pick<RodSize, "size" | "defaultRate" | "openingStock" | "isActive" | "notes">>,
   actor?: string
 ): { success: boolean; size?: RodSize; error?: string } {
   const sizes = getRodSizes();
@@ -1394,6 +1413,7 @@ export function updateRodSize(
     ...old,
     size: newSizeName,
     defaultRate: updates.defaultRate !== undefined ? Number(updates.defaultRate) : old.defaultRate,
+    openingStock: updates.openingStock !== undefined ? Number(updates.openingStock) : (old.openingStock || 0),
     isActive: updates.isActive !== undefined ? updates.isActive : old.isActive,
     notes: updates.notes !== undefined ? updates.notes.trim() : old.notes,
     updatedAt: new Date().toISOString(),
@@ -1406,7 +1426,7 @@ export function updateRodSize(
     action: "UPDATE_ROD_SIZE",
     entity: `Rod Size: ${updated.size}`,
     actor: actor || "System Administrator (Admin Account)",
-    notes: `Updated rod size "${old.size}". Rate: ₹${updated.defaultRate}/Kg, Status: ${updated.isActive ? "Active" : "Inactive"}.`,
+    notes: `Updated rod size "${old.size}". Rate: ₹${updated.defaultRate}/Kg, Opening Stock: ${updated.openingStock || 0} Kg, Status: ${updated.isActive ? "Active" : "Inactive"}.`,
   });
 
   return { success: true, size: updated };
@@ -1735,5 +1755,1038 @@ export function saveBusinessProfile(
 
   return updated;
 }
+
+/* ================================================================== */
+/*  PURCHASE, SUPPLIER LEDGER & LIVE INVENTORY STOCK ENGINE           */
+/* ================================================================== */
+
+export const INITIAL_SUPPLIERS: Supplier[] = [
+  {
+    id: "sup-1",
+    code: "SUP-0001",
+    name: "L&T / ULTRATECH CEMENT DEPOT",
+    phone: "+91 94370 88100",
+    email: "depot.odisha@ultratech.in",
+    address: "Jagatpur Industrial Estate, Cuttack, Odisha",
+    gstin: "21AAACU1234A1Z1",
+    supply_category: "cement",
+    is_active: true,
+    opening_balance: 0,
+    current_balance: 0,
+    total_purchases_amount: 0,
+    total_paid_amount: 0,
+    created_at: "2026-10-01T09:00:00.000Z",
+  },
+  {
+    id: "sup-2",
+    code: "SUP-0002",
+    name: "SUPPER & DALMIA CEMENT DISTRIBUTORS",
+    phone: "+91 98610 44200",
+    email: "orders@dalmiadistributors.in",
+    address: "Rasulgarh Industrial Area, Bhubaneswar, Odisha",
+    gstin: "21AABCS5678B1Z5",
+    supply_category: "cement",
+    is_active: true,
+    opening_balance: 0,
+    current_balance: 0,
+    total_purchases_amount: 0,
+    total_paid_amount: 0,
+    created_at: "2026-10-01T09:00:00.000Z",
+  },
+  {
+    id: "sup-3",
+    code: "SUP-0003",
+    name: "ODISHA TMT STEEL & REBAR STOCKIST",
+    phone: "+91 94371 55300",
+    email: "sales@odishasteelyard.in",
+    address: "Mancheswar Industrial Estate, Bhubaneswar, Odisha",
+    gstin: "21AAACO9012C1Z9",
+    supply_category: "rod",
+    is_active: true,
+    opening_balance: 0,
+    current_balance: 0,
+    total_purchases_amount: 0,
+    total_paid_amount: 0,
+    created_at: "2026-10-01T09:00:00.000Z",
+  },
+  {
+    id: "sup-4",
+    code: "SUP-0004",
+    name: "KALINGA ELECTRICALS & HARDWARE WHOLESALE",
+    phone: "+91 99370 66400",
+    email: "kalingaelectricals@gmail.com",
+    address: "Bapuji Nagar, Bhubaneswar, Odisha",
+    gstin: "21AAACK3456D1Z2",
+    supply_category: "daily",
+    is_active: true,
+    opening_balance: 0,
+    current_balance: 0,
+    total_purchases_amount: 0,
+    total_paid_amount: 0,
+    created_at: "2026-10-01T09:00:00.000Z",
+  },
+];
+
+export function getSuppliers(): Supplier[] {
+  if (!isClient()) return INITIAL_SUPPLIERS;
+  const raw = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
+  if (!raw) {
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(INITIAL_SUPPLIERS));
+    return INITIAL_SUPPLIERS;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : INITIAL_SUPPLIERS;
+  } catch {
+    return INITIAL_SUPPLIERS;
+  }
+}
+
+export function saveSuppliers(suppliers: Supplier[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(suppliers));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+  }
+}
+
+export function getPurchaseBills(): PurchaseBill[] {
+  if (!isClient()) return [];
+  const raw = localStorage.getItem(STORAGE_KEYS.PURCHASE_BILLS);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function savePurchaseBills(bills: PurchaseBill[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.PURCHASE_BILLS, JSON.stringify(bills));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+  }
+}
+
+export function getSupplierPayments(): SupplierPayment[] {
+  if (!isClient()) return [];
+  const raw = localStorage.getItem(STORAGE_KEYS.SUPPLIER_PAYMENTS);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSupplierPayments(payments: SupplierPayment[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.SUPPLIER_PAYMENTS, JSON.stringify(payments));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+  }
+}
+
+export function getPurchaseReturns(): PurchaseReturn[] {
+  if (!isClient()) return [];
+  const raw = localStorage.getItem(STORAGE_KEYS.PURCHASE_RETURNS);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function savePurchaseReturns(returns: PurchaseReturn[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.PURCHASE_RETURNS, JSON.stringify(returns));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+  }
+}
+
+/** Reconciles all supplier balances from opening_balance + posted purchase bills - posted payments - approved purchase returns */
+export function reconcileAllSuppliers(): Supplier[] {
+  const suppliers = getSuppliers();
+  const pBills = getPurchaseBills().filter(b => b.status === "posted");
+  const sPayments = getSupplierPayments().filter(p => p.status === "posted");
+  const pReturns = getPurchaseReturns().filter(r => r.status === "approved");
+
+  let changed = false;
+  const updated = suppliers.map(s => {
+    const totalPurchases = pBills
+      .filter(b => b.supplier_id === s.id || b.supplier_name.toUpperCase() === s.name.toUpperCase())
+      .reduce((acc, b) => acc + (b.total_amount || 0), 0);
+    const totalPaid = sPayments
+      .filter(p => p.supplier_id === s.id || p.supplier_name.toUpperCase() === s.name.toUpperCase())
+      .reduce((acc, p) => acc + (p.amount || 0), 0);
+    const totalReturns = pReturns
+      .filter(r => r.supplier_id === s.id || r.supplier_name.toUpperCase() === s.name.toUpperCase())
+      .reduce((acc, r) => acc + (r.amount || 0), 0);
+
+    const netBal = (s.opening_balance || 0) + totalPurchases - totalPaid - totalReturns;
+    if (
+      Math.abs((s.total_purchases_amount || 0) - totalPurchases) > MONEY_EPSILON ||
+      Math.abs((s.total_paid_amount || 0) - totalPaid) > MONEY_EPSILON ||
+      Math.abs((s.current_balance || 0) - netBal) > MONEY_EPSILON
+    ) {
+      changed = true;
+      return {
+        ...s,
+        total_purchases_amount: totalPurchases,
+        total_paid_amount: totalPaid,
+        current_balance: netBal,
+      };
+    }
+    return s;
+  });
+
+  if (changed && isClient()) {
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(updated));
+  }
+  return updated;
+}
+
+export function createSupplier(data: {
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+  supply_category?: 'cement' | 'rod' | 'daily' | 'all';
+  opening_balance?: number;
+}): Supplier {
+  const suppliers = getSuppliers();
+  const cleanName = data.name.trim().toUpperCase();
+  const existing = suppliers.find(s => s.name.toUpperCase() === cleanName);
+  if (existing) return existing;
+
+  const nextNum = suppliers.length + 1;
+  const openBal = Number(data.opening_balance) || 0;
+
+  const newSup: Supplier = {
+    id: `sup-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    code: `SUP-${String(nextNum).padStart(4, "0")}`,
+    name: cleanName,
+    phone: data.phone?.trim() || "",
+    email: data.email?.trim() || "",
+    address: data.address?.trim() || "Bhubaneswar / Odisha",
+    gstin: data.gstin?.trim().toUpperCase() || "",
+    supply_category: data.supply_category || "all",
+    is_active: true,
+    opening_balance: openBal,
+    current_balance: openBal,
+    total_purchases_amount: 0,
+    total_paid_amount: 0,
+    created_at: new Date().toISOString(),
+  };
+
+  suppliers.push(newSup);
+  saveSuppliers(suppliers);
+
+  addAuditLog({
+    action: "CREATE_SUPPLIER",
+    entity: `${newSup.name} (${newSup.code})`,
+    notes: `Created supplier account "${newSup.name}" with opening payable balance ₹${openBal.toFixed(2)}.`,
+  });
+
+  return newSup;
+}
+
+export interface PurchaseBillSettlementInfo {
+  purchase_bill_id: string;
+  purchase_number: string;
+  bill_amount: number;
+  allocated_payments: number;
+  allocated_returns: number;
+  total_settled: number;
+  remaining_balance: number;
+  payment_status: "unpaid" | "partially_paid" | "paid";
+  allocations: SupplierPaymentAllocation[];
+}
+
+export function getPurchaseBillSettlementInfo(
+  purchaseBillId: string,
+  allPayments?: SupplierPayment[],
+  allReturns?: PurchaseReturn[],
+  allBills?: PurchaseBill[]
+): PurchaseBillSettlementInfo {
+  const bills = allBills || getPurchaseBills();
+  const bill = bills.find(b => b.id === purchaseBillId);
+  if (!bill) {
+    return {
+      purchase_bill_id: purchaseBillId,
+      purchase_number: "",
+      bill_amount: 0,
+      allocated_payments: 0,
+      allocated_returns: 0,
+      total_settled: 0,
+      remaining_balance: 0,
+      payment_status: "unpaid",
+      allocations: [],
+    };
+  }
+
+  const payments = (allPayments || getSupplierPayments()).filter(p => p.status === "posted");
+  const returns = (allReturns || getPurchaseReturns()).filter(r => r.status === "approved");
+
+  const billAllocations: SupplierPaymentAllocation[] = [];
+  for (const p of payments) {
+    for (const alloc of p.allocations || []) {
+      if (alloc.purchase_bill_id === bill.id || (alloc.purchase_number && alloc.purchase_number === bill.purchase_number)) {
+        billAllocations.push({
+          ...alloc,
+          payment_voucher_number: alloc.payment_voucher_number || p.voucher_number,
+          payment_date: alloc.payment_date || p.payment_date,
+        });
+      }
+    }
+  }
+
+  const allocatedPayments = billAllocations.reduce((s, a) => s + (a.allocated_amount || 0), 0);
+  const allocatedReturns = returns
+    .filter(r => r.purchase_bill_id === bill.id || (r.purchase_number && r.purchase_number === bill.purchase_number))
+    .reduce((s, r) => s + (r.amount || 0), 0);
+
+  const billAmount = bill.total_amount || 0;
+  const totalSettled = allocatedPayments + allocatedReturns;
+  const remaining = Math.max(0, billAmount - totalSettled);
+
+  let status: "unpaid" | "partially_paid" | "paid" = "unpaid";
+  if (billAmount > 0 && remaining <= MONEY_EPSILON) {
+    status = "paid";
+  } else if (totalSettled > MONEY_EPSILON) {
+    status = "partially_paid";
+  }
+
+  return {
+    purchase_bill_id: bill.id,
+    purchase_number: bill.purchase_number,
+    bill_amount: billAmount,
+    allocated_payments: allocatedPayments,
+    allocated_returns: allocatedReturns,
+    total_settled: totalSettled,
+    remaining_balance: remaining,
+    payment_status: status,
+    allocations: billAllocations,
+  };
+}
+
+export function createPurchaseBill(data: {
+  supplier_id: string;
+  supplier_name: string;
+  supplier_invoice_number?: string;
+  supplier_gstin?: string;
+  bill_category: BillCategory;
+  purchase_date: string;
+  due_date?: string;
+  vehicle_number?: string;
+  subtotal: number;
+  freight_amount?: number;
+  tax_type?: 'intra_state' | 'inter_state';
+  gst_rate?: number;
+  cgst_rate?: number;
+  sgst_rate?: number;
+  igst_rate?: number;
+  cgst_amount?: number;
+  sgst_amount?: number;
+  igst_amount?: number;
+  tax_amount?: number;
+  total_amount: number;
+  notes?: string;
+  items: PurchaseBill["items"];
+  cement_details?: PurchaseBill["cement_details"];
+  rod_details?: PurchaseBill["rod_details"];
+  daily_details?: PurchaseBill["daily_details"];
+  // Optional immediate payment at bill entry
+  paid_amount?: number;
+  payment_mode?: PaymentMode;
+  payment_reference?: string;
+}): PurchaseBill {
+  const bills = getPurchaseBills();
+  const nextSeq = bills.length + 1;
+  const year = (data.purchase_date || "2026").slice(0, 4);
+  const catPrefix = data.bill_category === "cement" ? "PCEM" : data.bill_category === "rod" ? "PROD" : "PELEC";
+  const purchaseNumber = `${catPrefix}-${year}-${String(nextSeq).padStart(3, "0")}`;
+
+  const billId = `pbill-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const subtotal = Number(data.subtotal) || 0;
+  const freight = Number(data.freight_amount) || 0;
+
+  const taxType = data.tax_type || "intra_state";
+  let gstRate = Number(data.gst_rate) || 0;
+  let cgstRate = 0;
+  let sgstRate = 0;
+  let igstRate = 0;
+  let cgstAmount = 0;
+  let sgstAmount = 0;
+  let igstAmount = 0;
+  let totalTax = 0;
+
+  if (taxType === "intra_state") {
+    cgstRate = data.cgst_rate !== undefined ? Number(data.cgst_rate) : Number((gstRate / 2).toFixed(2));
+    sgstRate = data.sgst_rate !== undefined ? Number(data.sgst_rate) : Number((gstRate / 2).toFixed(2));
+    cgstAmount = data.cgst_amount !== undefined ? Number(data.cgst_amount) : Number(((subtotal * cgstRate) / 100).toFixed(2));
+    sgstAmount = data.sgst_amount !== undefined ? Number(data.sgst_amount) : Number(((subtotal * sgstRate) / 100).toFixed(2));
+    totalTax = Number((cgstAmount + sgstAmount).toFixed(2));
+  } else {
+    igstRate = data.igst_rate !== undefined ? Number(data.igst_rate) : gstRate;
+    igstAmount = data.igst_amount !== undefined ? Number(data.igst_amount) : Number(((subtotal * igstRate) / 100).toFixed(2));
+    totalTax = Number(igstAmount.toFixed(2));
+  }
+
+  // If explicit tax_amount was passed and higher, preserve it
+  if (data.tax_amount !== undefined && totalTax === 0) {
+    totalTax = Number(data.tax_amount) || 0;
+  }
+
+  const computedTotal = Number((subtotal + freight + totalTax).toFixed(2));
+  const totalAmount = data.total_amount ? Number(data.total_amount) : computedTotal;
+  const paidNow = Math.min(totalAmount, Math.max(0, Number(data.paid_amount) || 0));
+
+  let initialStatus: "unpaid" | "partially_paid" | "paid" = "unpaid";
+  if (totalAmount > 0 && Math.abs(paidNow - totalAmount) <= MONEY_EPSILON) {
+    initialStatus = "paid";
+  } else if (paidNow > MONEY_EPSILON) {
+    initialStatus = "partially_paid";
+  }
+
+  const newBill: PurchaseBill = {
+    id: billId,
+    purchase_number: purchaseNumber,
+    supplier_invoice_number: data.supplier_invoice_number?.trim() || purchaseNumber,
+    bill_category: data.bill_category,
+    purchase_date: data.purchase_date,
+    due_date: data.due_date || null,
+    supplier_id: data.supplier_id,
+    supplier_name: data.supplier_name,
+    supplier_gstin: data.supplier_gstin?.trim() || "",
+    vehicle_number: data.vehicle_number?.trim().toUpperCase() || "",
+    subtotal: subtotal || totalAmount,
+    freight_amount: freight,
+    tax_type: taxType,
+    gst_rate: gstRate,
+    cgst_rate: cgstRate,
+    sgst_rate: sgstRate,
+    igst_rate: igstRate,
+    cgst_amount: cgstAmount,
+    sgst_amount: sgstAmount,
+    igst_amount: igstAmount,
+    tax_amount: totalTax,
+    total_amount: totalAmount,
+    payment_status: initialStatus,
+    status: "posted",
+    notes: data.notes?.trim() || "",
+    items: (data.items || []).map(it => ({ ...it, bill_id: billId })),
+    cement_details: data.cement_details,
+    rod_details: data.rod_details,
+    daily_details: data.daily_details,
+    created_at: new Date().toISOString(),
+  };
+
+  bills.unshift(newBill);
+  savePurchaseBills(bills);
+
+  const gstNote =
+    taxType === "intra_state" && totalTax > 0
+      ? ` (Taxable: ₹${subtotal.toFixed(2)}, CGST ${cgstRate}%: ₹${cgstAmount.toFixed(2)}, SGST ${sgstRate}%: ₹${sgstAmount.toFixed(2)})`
+      : totalTax > 0
+      ? ` (Taxable: ₹${subtotal.toFixed(2)}, IGST ${igstRate}%: ₹${igstAmount.toFixed(2)})`
+      : "";
+
+  addAuditLog({
+    action: "CREATE_PURCHASE_BILL",
+    entity: `Purchase #${purchaseNumber} (${data.supplier_name})`,
+    notes: `Recorded ${data.bill_category.toUpperCase()} purchase bill #${purchaseNumber} from ${data.supplier_name} for ₹${totalAmount.toFixed(2)}${gstNote}.`,
+  });
+
+  // If paid immediately (full or partial), record supplier payment and link allocation
+  if (paidNow > MONEY_EPSILON) {
+    recordSupplierPayment({
+      supplier_id: data.supplier_id,
+      supplier_name: data.supplier_name,
+      payment_date: data.purchase_date,
+      amount: paidNow,
+      payment_mode: data.payment_mode || "CASH",
+      reference_number: data.payment_reference || `Settled with ${purchaseNumber}`,
+      notes: `Immediate payment against Purchase Bill #${purchaseNumber}`,
+      direct_bill_id: billId,
+    });
+  } else {
+    reconcileAllSuppliers();
+  }
+
+  return newBill;
+}
+
+export function recordSupplierPayment(data: {
+  supplier_id: string;
+  supplier_name: string;
+  payment_date: string;
+  amount: number;
+  payment_mode: PaymentMode;
+  reference_number?: string;
+  notes?: string;
+  direct_bill_id?: string;
+}): SupplierPayment {
+  const payments = getSupplierPayments();
+  const nextSeq = payments.length + 1;
+  const year = (data.payment_date || "2026").slice(0, 4);
+  const voucherNo = `SPAY-${year}-${String(nextSeq).padStart(3, "0")}`;
+  const payId = `spay-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const payAmount = Number(data.amount) || 0;
+
+  const allocations: SupplierPaymentAllocation[] = [];
+  let unallocated = payAmount;
+
+  const pBills = getPurchaseBills();
+  const pReturns = getPurchaseReturns();
+
+  if (data.direct_bill_id) {
+    const targetBill = pBills.find(b => b.id === data.direct_bill_id);
+    if (targetBill) {
+      const settlement = getPurchaseBillSettlementInfo(targetBill.id, payments, pReturns, pBills);
+      const allocAmt = Math.min(unallocated, settlement.remaining_balance);
+      if (allocAmt > MONEY_EPSILON) {
+        allocations.push({
+          id: `spalloc-${Date.now()}-1`,
+          supplier_payment_id: payId,
+          payment_voucher_number: voucherNo,
+          payment_date: data.payment_date,
+          purchase_bill_id: targetBill.id,
+          purchase_number: targetBill.purchase_number,
+          supplier_invoice_number: targetBill.supplier_invoice_number,
+          purchase_date: targetBill.purchase_date,
+          allocated_amount: allocAmt,
+          notes: data.notes || "Direct settlement at purchase entry",
+          created_at: new Date().toISOString(),
+        });
+        unallocated = Math.max(0, payAmount - allocAmt);
+      }
+    }
+  }
+
+  const newPay: SupplierPayment = {
+    id: payId,
+    voucher_number: voucherNo,
+    payment_date: data.payment_date,
+    supplier_id: data.supplier_id,
+    supplier_name: data.supplier_name,
+    amount: payAmount,
+    payment_mode: data.payment_mode,
+    reference_number: data.reference_number?.trim() || "",
+    notes: data.notes?.trim() || "",
+    unallocated_amount: unallocated,
+    status: "posted",
+    allocations,
+    created_at: new Date().toISOString(),
+  };
+
+  payments.unshift(newPay);
+  saveSupplierPayments(payments);
+
+  // Sync purchase bill status if allocated
+  if (allocations.length > 0) {
+    const updatedBills = pBills.map(b => {
+      if (allocations.some(a => a.purchase_bill_id === b.id)) {
+        const info = getPurchaseBillSettlementInfo(b.id, payments, pReturns, pBills);
+        return { ...b, payment_status: info.payment_status };
+      }
+      return b;
+    });
+    savePurchaseBills(updatedBills);
+  }
+
+  // If paid in CASH, also record in Cash Outflows so Cash-in-Drawer remains accurate
+  if (data.payment_mode === "CASH") {
+    const cashTxs = getCashTransactions();
+    cashTxs.unshift({
+      id: `cash-spay-${payId}`,
+      transaction_type: "cash_given",
+      transaction_date: data.payment_date,
+      recipient_name: data.supplier_name,
+      category: "Supplier Payment",
+      amount: payAmount,
+      payment_mode: "CASH",
+      reference_number: voucherNo,
+      notes: `Supplier Cash Payment (${voucherNo})${data.notes ? ` - ${data.notes}` : ""}`,
+      is_categorized: true,
+      is_verified: true,
+      is_imported: false,
+      created_at: new Date().toISOString(),
+    });
+    saveCashTransactions(cashTxs);
+  }
+
+  reconcileAllSuppliers();
+
+  addAuditLog({
+    action: "SUPPLIER_PAYMENT",
+    entity: `Voucher #${voucherNo} (${data.supplier_name})`,
+    notes: `Paid ₹${payAmount.toFixed(2)} to supplier ${data.supplier_name} via ${data.payment_mode}.`,
+  });
+
+  return newPay;
+}
+
+export function getSupplierUnallocatedPayments(supplierId: string): SupplierPayment[] {
+  const suppliers = getSuppliers();
+  const sup = suppliers.find(s => s.id === supplierId);
+  const payments = getSupplierPayments().filter(p => p.status === "posted");
+
+  return payments
+    .filter(p => p.supplier_id === supplierId || (sup && p.supplier_name.toUpperCase() === sup.name.toUpperCase()))
+    .map(p => {
+      const allocatedSum = (p.allocations || []).reduce((s, a) => s + (a.allocated_amount || 0), 0);
+      const unallocated = Math.max(0, (p.amount || 0) - allocatedSum);
+      return { ...p, unallocated_amount: unallocated };
+    })
+    .filter(p => p.unallocated_amount > MONEY_EPSILON);
+}
+
+export function getSupplierOutstandingBills(
+  supplierId: string
+): Array<PurchaseBill & { settlement: PurchaseBillSettlementInfo }> {
+  const suppliers = getSuppliers();
+  const sup = suppliers.find(s => s.id === supplierId);
+  const bills = getPurchaseBills().filter(b => b.status === "posted");
+  const payments = getSupplierPayments().filter(p => p.status === "posted");
+  const returns = getPurchaseReturns().filter(r => r.status === "approved");
+
+  return bills
+    .filter(b => b.supplier_id === supplierId || (sup && b.supplier_name.toUpperCase() === sup.name.toUpperCase()))
+    .map(b => {
+      const settlement = getPurchaseBillSettlementInfo(b.id, payments, returns, bills);
+      return {
+        ...b,
+        payment_status: settlement.payment_status,
+        settlement,
+      };
+    })
+    .filter(b => b.settlement.remaining_balance > MONEY_EPSILON)
+    .sort((a, b) => (a.purchase_date || "").localeCompare(b.purchase_date || ""));
+}
+
+export function allocateSupplierPaymentToBills(params: {
+  supplier_payment_id: string;
+  allocations: { purchase_bill_id: string; amount: number }[];
+  notes?: string;
+  actor_role?: UserRole;
+}): {
+  success: boolean;
+  error?: string;
+  payment?: SupplierPayment;
+  allocated_total?: number;
+} {
+  const role = params.actor_role || getStoredUserRole();
+  if (role !== "owner" && role !== "manager" && role !== "admin") {
+    return {
+      success: false,
+      error: "Unauthorized: Only Owner, Manager, or Admin can allocate supplier payments.",
+    };
+  }
+
+  const payments = getSupplierPayments();
+  const payIdx = payments.findIndex(p => p.id === params.supplier_payment_id);
+  if (payIdx === -1) {
+    return { success: false, error: "Supplier payment voucher not found." };
+  }
+  const payment = payments[payIdx];
+
+  const existingAllocSum = (payment.allocations || []).reduce((s, a) => s + (a.allocated_amount || 0), 0);
+  const availableCredit = Math.max(0, (payment.amount || 0) - existingAllocSum);
+
+  const requestedAllocations = (params.allocations || []).filter(a => a.amount > MONEY_EPSILON);
+  if (requestedAllocations.length === 0) {
+    return { success: false, error: "Please enter an allocation amount for at least one purchase bill." };
+  }
+
+  const requestedTotal = requestedAllocations.reduce((s, a) => s + a.amount, 0);
+  if (requestedTotal - availableCredit > MONEY_EPSILON) {
+    return {
+      success: false,
+      error: `Allocation total (₹${requestedTotal.toFixed(2)}) exceeds available payment credit (₹${availableCredit.toFixed(2)}).`,
+    };
+  }
+
+  const bills = getPurchaseBills();
+  const returns = getPurchaseReturns().filter(r => r.status === "approved");
+  const newAllocations: SupplierPaymentAllocation[] = [];
+
+  for (const req of requestedAllocations) {
+    const bill = bills.find(b => b.id === req.purchase_bill_id);
+    if (!bill) {
+      return { success: false, error: `Purchase bill ${req.purchase_bill_id} not found.` };
+    }
+    const settlement = getPurchaseBillSettlementInfo(bill.id, payments, returns, bills);
+    if (req.amount - settlement.remaining_balance > MONEY_EPSILON) {
+      return {
+        success: false,
+        error: `Allocation of ₹${req.amount.toFixed(2)} for Bill #${bill.purchase_number} exceeds remaining balance (₹${settlement.remaining_balance.toFixed(2)}).`,
+      };
+    }
+
+    newAllocations.push({
+      id: `spalloc-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      supplier_payment_id: payment.id,
+      payment_voucher_number: payment.voucher_number,
+      payment_date: payment.payment_date,
+      purchase_bill_id: bill.id,
+      purchase_number: bill.purchase_number,
+      supplier_invoice_number: bill.supplier_invoice_number,
+      purchase_date: bill.purchase_date,
+      allocated_amount: Number(req.amount.toFixed(2)),
+      allocated_by: role,
+      notes: params.notes || `Allocated from Voucher #${payment.voucher_number}`,
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  payment.allocations = [...(payment.allocations || []), ...newAllocations];
+  const updatedAllocSum = payment.allocations.reduce((s, a) => s + (a.allocated_amount || 0), 0);
+  payment.unallocated_amount = Math.max(0, Number((payment.amount - updatedAllocSum).toFixed(2)));
+  payments[payIdx] = payment;
+  saveSupplierPayments(payments);
+
+  for (const alloc of newAllocations) {
+    const bIdx = bills.findIndex(b => b.id === alloc.purchase_bill_id);
+    if (bIdx >= 0) {
+      const updatedSettlement = getPurchaseBillSettlementInfo(alloc.purchase_bill_id, payments, returns, bills);
+      bills[bIdx].payment_status = updatedSettlement.payment_status;
+    }
+  }
+  savePurchaseBills(bills);
+  reconcileAllSuppliers();
+
+  const billSummary = newAllocations.map(a => `#${a.purchase_number} (₹${a.allocated_amount.toFixed(2)})`).join(", ");
+  addAuditLog({
+    action: "SUPPLIER_PAYMENT_ALLOCATION",
+    entity: `Voucher ${payment.voucher_number} (${payment.supplier_name})`,
+    notes: `Allocated ₹${requestedTotal.toFixed(2)} from Supplier Voucher #${payment.voucher_number} across: ${billSummary}.`,
+  });
+
+  return {
+    success: true,
+    payment,
+    allocated_total: requestedTotal,
+  };
+}
+
+export function reverseSupplierPaymentAllocation(params: {
+  supplier_payment_id: string;
+  allocation_id: string;
+  reason?: string;
+  actor_role?: UserRole;
+}): {
+  success: boolean;
+  error?: string;
+} {
+  const role = params.actor_role || getStoredUserRole();
+  if (role !== "owner" && role !== "manager" && role !== "admin") {
+    return {
+      success: false,
+      error: "Unauthorized: Only Owner, Manager, or Admin can reverse supplier payment allocations.",
+    };
+  }
+
+  const payments = getSupplierPayments();
+  const payIdx = payments.findIndex(p => p.id === params.supplier_payment_id);
+  if (payIdx === -1) return { success: false, error: "Supplier payment voucher not found." };
+
+  const payment = payments[payIdx];
+  const allocIdx = (payment.allocations || []).findIndex(a => a.id === params.allocation_id);
+  if (allocIdx === -1) return { success: false, error: "Allocation record not found." };
+
+  const removed = payment.allocations[allocIdx];
+  payment.allocations.splice(allocIdx, 1);
+  const totalAllocNow = payment.allocations.reduce((s, a) => s + (a.allocated_amount || 0), 0);
+  payment.unallocated_amount = Math.max(0, payment.amount - totalAllocNow);
+  payments[payIdx] = payment;
+  saveSupplierPayments(payments);
+
+  const bills = getPurchaseBills();
+  const returns = getPurchaseReturns().filter(r => r.status === "approved");
+  const bIdx = bills.findIndex(b => b.id === removed.purchase_bill_id);
+  if (bIdx >= 0) {
+    const info = getPurchaseBillSettlementInfo(removed.purchase_bill_id, payments, returns, bills);
+    bills[bIdx].payment_status = info.payment_status;
+    savePurchaseBills(bills);
+  }
+  reconcileAllSuppliers();
+
+  addAuditLog({
+    action: "SUPPLIER_ALLOCATION_REVERSAL",
+    entity: `Voucher ${payment.voucher_number} ➔ Purchase #${removed.purchase_number}`,
+    notes: `Reversed allocation of ₹${removed.allocated_amount.toFixed(2)} from Voucher #${payment.voucher_number} to Purchase Bill #${removed.purchase_number}.${params.reason ? ` Reason: ${params.reason}` : ""}`,
+  });
+
+  return { success: true };
+}
+
+export function createPurchaseReturn(data: {
+  supplier_id: string;
+  supplier_name: string;
+  purchase_bill_id?: string;
+  purchase_number?: string;
+  return_date: string;
+  item_type: "CEMENT" | "ROD" | "ELECTRIC";
+  brand_or_size?: string;
+  qty?: number;
+  amount: number;
+  reason?: string;
+}): PurchaseReturn {
+  const returns = getPurchaseReturns();
+  const nextSeq = returns.length + 1;
+  const year = (data.return_date || "2026").slice(0, 4);
+  const dnNumber = `DN-${year}-${String(nextSeq).padStart(3, "0")}`;
+
+  const newRet: PurchaseReturn = {
+    id: `pret-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    debit_note_number: dnNumber,
+    purchase_bill_id: data.purchase_bill_id,
+    purchase_number: data.purchase_number,
+    supplier_id: data.supplier_id,
+    supplier_name: data.supplier_name,
+    return_date: data.return_date,
+    item_type: data.item_type,
+    brand_or_size: data.brand_or_size?.trim() || "",
+    qty: Number(data.qty) || 0,
+    amount: Number(data.amount) || 0,
+    reason: data.reason?.trim() || "Damaged / Excess stock returned to supplier",
+    status: "approved",
+    created_at: new Date().toISOString(),
+  };
+
+  returns.unshift(newRet);
+  savePurchaseReturns(returns);
+  reconcileAllSuppliers();
+
+  addAuditLog({
+    action: "PURCHASE_RETURN",
+    entity: `Debit Note #${dnNumber} (${data.supplier_name})`,
+    notes: `Issued Debit Note #${dnNumber} to ${data.supplier_name} for ₹${newRet.amount.toFixed(2)} (${data.item_type}${data.brand_or_size ? ` - ${data.brand_or_size}` : ""}).`,
+  });
+
+  return newRet;
+}
+
+export interface PurchaseSummaryMetrics {
+  gross_purchases: number;
+  purchase_returns: number;
+  net_purchases: number;
+  cement_purchases: number;
+  cement_bags_purchased: number;
+  rod_purchases: number;
+  rod_kg_purchased: number;
+  daily_purchases: number;
+  supplier_payments_total: number;
+  total_supplier_payable: number;
+  unpaid_purchase_bills_count: number;
+  partially_paid_purchase_bills_count: number;
+  unallocated_supplier_advances: number;
+}
+
+export function calculatePurchaseMetrics(range?: DateRange): PurchaseSummaryMetrics {
+  const allBills = getPurchaseBills().filter(b => b.status === "posted");
+  const allReturns = getPurchaseReturns().filter(r => r.status === "approved");
+  const allPayments = getSupplierPayments().filter(p => p.status === "posted");
+  const suppliers = reconcileAllSuppliers();
+
+  const billsInPeriod = range
+    ? allBills.filter(b => isDateInRange(b.purchase_date, range))
+    : allBills;
+  const returnsInPeriod = range
+    ? allReturns.filter(r => isDateInRange(r.return_date, range))
+    : allReturns;
+  const paymentsInPeriod = range
+    ? allPayments.filter(p => isDateInRange(p.payment_date, range))
+    : allPayments;
+
+  const cementBills = billsInPeriod.filter(b => b.bill_category === "cement");
+  const rodBills = billsInPeriod.filter(b => b.bill_category === "rod");
+  const dailyBills = billsInPeriod.filter(b => b.bill_category === "daily");
+
+  const cementPurchases = cementBills.reduce((s, b) => s + (b.total_amount || 0), 0);
+  const cementBags = cementBills.reduce((s, b) => s + (b.cement_details?.qty_bags || 0), 0);
+  const rodPurchases = rodBills.reduce((s, b) => s + (b.total_amount || 0), 0);
+  const rodKg = rodBills.reduce((s, b) => s + (b.rod_details?.qty_kg || 0), 0);
+  const dailyPurchases = dailyBills.reduce((s, b) => s + (b.total_amount || 0), 0);
+
+  const grossPurchases = cementPurchases + rodPurchases + dailyPurchases;
+  const purchaseReturns = returnsInPeriod.reduce((s, r) => s + (r.amount || 0), 0);
+  const netPurchases = grossPurchases - purchaseReturns;
+  const supplierPaymentsTotal = paymentsInPeriod.reduce((s, p) => s + (p.amount || 0), 0);
+
+  let unpaidCount = 0;
+  let partialCount = 0;
+  for (const b of allBills) {
+    const info = getPurchaseBillSettlementInfo(b.id, allPayments, allReturns, allBills);
+    if (info.payment_status === "unpaid") unpaidCount++;
+    else if (info.payment_status === "partially_paid") partialCount++;
+  }
+
+  const totalSupplierPayable = suppliers.reduce((s, sup) => s + Math.max(0, sup.current_balance || 0), 0);
+  const unallocatedAdvances = allPayments.reduce((s, p) => s + (p.unallocated_amount || 0), 0);
+
+  return {
+    gross_purchases: grossPurchases,
+    purchase_returns: purchaseReturns,
+    net_purchases: netPurchases,
+    cement_purchases: cementPurchases,
+    cement_bags_purchased: cementBags,
+    rod_purchases: rodPurchases,
+    rod_kg_purchased: rodKg,
+    daily_purchases: dailyPurchases,
+    supplier_payments_total: supplierPaymentsTotal,
+    total_supplier_payable: totalSupplierPayable,
+    unpaid_purchase_bills_count: unpaidCount,
+    partially_paid_purchase_bills_count: partialCount,
+    unallocated_supplier_advances: unallocatedAdvances,
+  };
+}
+
+/**
+ * Real-Time Inventory & Godown Stock Calculation across all Cement Brands (Bags) and TMT Rod Sizes (Kg)
+ */
+export function calculateInventoryStock(): {
+  cementStock: StockItemSummary[];
+  rodStock: StockItemSummary[];
+  totalCementBagsAvailable: number;
+  totalRodKgAvailable: number;
+  totalInventoryValue: number;
+  lowStockCount: number;
+} {
+  const cementBrands = getCementBrands();
+  const rodSizes = getRodSizes();
+
+  const pBills = getPurchaseBills().filter(b => b.status === "posted");
+  const pReturns = getPurchaseReturns().filter(r => r.status === "approved");
+  const sBills = getBills().filter(b => b.status === "posted");
+  const sReturns = getReturns().filter(r => isApprovedReturn(r));
+
+  // 1. Cement Stock per Brand
+  const cementStock: StockItemSummary[] = cementBrands.map(brand => {
+    const bName = brand.name.toUpperCase();
+    const opening = Number(brand.openingStock) || 0;
+
+    const matchingPurchases = pBills.filter(
+      b => b.bill_category === "cement" && b.cement_details?.cement_type?.toUpperCase() === bName
+    );
+    const purchasedQty = matchingPurchases.reduce((s, b) => s + (b.cement_details?.qty_bags || 0), 0);
+    const purchasedValue = matchingPurchases.reduce((s, b) => s + (b.cement_details?.amount || b.total_amount || 0), 0);
+
+    const purchaseReturnQty = pReturns
+      .filter(r => r.item_type === "CEMENT" && r.brand_or_size?.toUpperCase() === bName)
+      .reduce((s, r) => s + (r.qty || 0), 0);
+
+    const soldQty = sBills
+      .filter(b => b.bill_category === "cement" && b.cement_details?.cement_type?.toUpperCase() === bName)
+      .reduce((s, b) => s + (b.cement_details?.qty_bags || 0), 0);
+
+    // Estimate returned bags from sales returns if reason/item mentions the brand
+    const salesReturnQty = sReturns
+      .filter(r => r.item_type === "CEMENT" && (r.reason || "").toUpperCase().includes(bName))
+      .reduce((s, r) => {
+        const rate = brand.defaultRate || 340;
+        return s + (r.amount ? Math.round(r.amount / rate) : 0);
+      }, 0);
+
+    const available = opening + purchasedQty - purchaseReturnQty - soldQty + salesReturnQty;
+    const avgPurchaseRate =
+      purchasedQty > 0
+        ? purchasedValue / purchasedQty
+        : Math.round((brand.defaultRate || 340) * 0.88);
+
+    const stockValue = Math.max(0, available) * avgPurchaseRate;
+
+    return {
+      id: brand.id,
+      category: "cement",
+      name: brand.name,
+      unit: "Bags",
+      opening_stock: opening,
+      purchased_qty: purchasedQty,
+      purchase_return_qty: purchaseReturnQty,
+      sold_qty: soldQty,
+      sales_return_qty: salesReturnQty,
+      available_stock: Number(available.toFixed(2)),
+      avg_purchase_rate: Number(avgPurchaseRate.toFixed(2)),
+      default_selling_rate: brand.defaultRate || 0,
+      stock_value: Number(stockValue.toFixed(2)),
+    };
+  });
+
+  // 2. Rod Stock per Size
+  const rodStock: StockItemSummary[] = rodSizes.map(rod => {
+    const rName = rod.size.toLowerCase();
+    const opening = Number(rod.openingStock) || 0;
+
+    const matchingPurchases = pBills.filter(
+      b => b.bill_category === "rod" && b.rod_details?.rod_size?.toLowerCase() === rName
+    );
+    const purchasedQty = matchingPurchases.reduce((s, b) => s + (b.rod_details?.qty_kg || 0), 0);
+    const purchasedValue = matchingPurchases.reduce((s, b) => s + (b.rod_details?.amount || b.total_amount || 0), 0);
+
+    const purchaseReturnQty = pReturns
+      .filter(r => r.item_type === "ROD" && r.brand_or_size?.toLowerCase() === rName)
+      .reduce((s, r) => s + (r.qty || 0), 0);
+
+    const soldQty = sBills
+      .filter(b => b.bill_category === "rod" && b.rod_details?.rod_size?.toLowerCase() === rName)
+      .reduce((s, b) => s + (b.rod_details?.qty_kg || 0), 0);
+
+    const salesReturnQty = sReturns
+      .filter(r => r.item_type === "ROD" && (r.reason || "").toLowerCase().includes(rName))
+      .reduce((s, r) => {
+        const rate = rod.defaultRate || 68;
+        return s + (r.amount ? Number((r.amount / rate).toFixed(2)) : 0);
+      }, 0);
+
+    const available = opening + purchasedQty - purchaseReturnQty - soldQty + salesReturnQty;
+    const avgPurchaseRate =
+      purchasedQty > 0
+        ? purchasedValue / purchasedQty
+        : Number(((rod.defaultRate || 68) * 0.88).toFixed(2));
+
+    const stockValue = Math.max(0, available) * avgPurchaseRate;
+
+    return {
+      id: rod.id,
+      category: "rod",
+      name: rod.size,
+      unit: "Kg",
+      opening_stock: opening,
+      purchased_qty: Number(purchasedQty.toFixed(2)),
+      purchase_return_qty: Number(purchaseReturnQty.toFixed(2)),
+      sold_qty: Number(soldQty.toFixed(2)),
+      sales_return_qty: Number(salesReturnQty.toFixed(2)),
+      available_stock: Number(available.toFixed(2)),
+      avg_purchase_rate: Number(avgPurchaseRate.toFixed(2)),
+      default_selling_rate: rod.defaultRate || 0,
+      stock_value: Number(stockValue.toFixed(2)),
+    };
+  });
+
+  const totalCementBagsAvailable = cementStock.reduce((s, i) => s + Math.max(0, i.available_stock), 0);
+  const totalRodKgAvailable = rodStock.reduce((s, i) => s + Math.max(0, i.available_stock), 0);
+  const totalInventoryValue =
+    cementStock.reduce((s, i) => s + i.stock_value, 0) +
+    rodStock.reduce((s, i) => s + i.stock_value, 0);
+
+  const lowStockCount =
+    cementStock.filter(c => c.available_stock <= 20).length +
+    rodStock.filter(r => r.available_stock <= 100).length;
+
+  return {
+    cementStock,
+    rodStock,
+    totalCementBagsAvailable: Number(totalCementBagsAvailable.toFixed(2)),
+    totalRodKgAvailable: Number(totalRodKgAvailable.toFixed(2)),
+    totalInventoryValue: Number(totalInventoryValue.toFixed(2)),
+    lowStockCount,
+  };
+}
+
 
 

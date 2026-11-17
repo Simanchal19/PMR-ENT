@@ -213,6 +213,7 @@ export interface CementBrand {
   id: string;
   name: string;
   defaultRate: number;
+  openingStock?: number;
   isActive: boolean;
   notes?: string;
   updatedAt?: string;
@@ -222,6 +223,7 @@ export interface RodSize {
   id: string;
   size: string;
   defaultRate: number;
+  openingStock?: number;
   isActive: boolean;
   notes?: string;
   updatedAt?: string;
@@ -249,5 +251,120 @@ export interface BusinessProfile {
   address: string;
   updatedAt?: string;
 }
+
+export interface Supplier {
+  id: string;
+  code?: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+  supply_category: 'cement' | 'rod' | 'daily' | 'all';
+  is_active: boolean;
+  opening_balance: number; // Amount owed to supplier initially
+  current_balance: number; // Net payable due to supplier
+  total_purchases_amount: number;
+  total_paid_amount: number;
+  created_at: string;
+}
+
+export interface PurchaseBill {
+  id: string;
+  purchase_number: string;          // Internal voucher e.g. PUR-2026-001
+  supplier_invoice_number?: string; // Vendor's bill/challan number
+  bill_category: BillCategory;      // 'cement' | 'rod' | 'daily'
+  purchase_date: string;            // YYYY-MM-DD
+  due_date?: string | null;
+  supplier_id: string;
+  supplier_name: string;
+  supplier_gstin?: string;          // Supplier's GSTIN
+  vehicle_number?: string;
+  subtotal: number;                 // Taxable Goods Subtotal
+  freight_amount: number;           // Freight / Transport Charges
+  tax_type?: 'intra_state' | 'inter_state'; // intra_state (CGST + SGST) or inter_state (IGST)
+  gst_rate?: number;                // Total GST % (e.g. 28, 18, 12, 5, 0)
+  cgst_rate?: number;               // CGST % (e.g. 14, 9, 6, 2.5, 0)
+  sgst_rate?: number;               // SGST % (e.g. 14, 9, 6, 2.5, 0)
+  igst_rate?: number;               // IGST % (e.g. 28, 18, 12, 5, 0)
+  cgst_amount?: number;             // CGST in ₹
+  sgst_amount?: number;             // SGST in ₹
+  igst_amount?: number;             // IGST in ₹
+  tax_amount: number;               // Total GST (cgst_amount + sgst_amount or igst_amount)
+  total_amount: number;             // Grand Total (subtotal + freight + tax_amount)
+  payment_status: 'unpaid' | 'partially_paid' | 'paid';
+  status: 'posted' | 'voided';
+  notes?: string;
+  items: BillItem[];
+  cement_details?: CementDetail;
+  rod_details?: RodDetail;
+  daily_details?: DailySaleDetail;
+  created_at: string;
+}
+
+export interface SupplierPaymentAllocation {
+  id: string;
+  supplier_payment_id: string;
+  payment_voucher_number?: string;
+  payment_date?: string | null;
+  purchase_bill_id: string;
+  purchase_number: string;
+  supplier_invoice_number?: string;
+  purchase_date?: string | null;
+  allocated_amount: number;
+  allocated_by?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface SupplierPayment {
+  id: string;
+  voucher_number: string; // e.g. SPAY-2026-001
+  payment_date: string;
+  supplier_id: string;
+  supplier_name: string;
+  amount: number;
+  payment_mode: PaymentMode;
+  reference_number?: string;
+  notes?: string;
+  unallocated_amount: number;
+  status: 'posted' | 'voided';
+  allocations: SupplierPaymentAllocation[];
+  created_at: string;
+}
+
+export interface PurchaseReturn {
+  id: string;
+  debit_note_number: string; // e.g. DN-2026-001
+  purchase_bill_id?: string;
+  purchase_number?: string;
+  supplier_id: string;
+  supplier_name: string;
+  return_date: string;
+  item_type: 'CEMENT' | 'ROD' | 'ELECTRIC';
+  brand_or_size?: string;
+  qty?: number;
+  amount: number;
+  reason?: string;
+  status: 'approved' | 'voided';
+  created_at: string;
+}
+
+export interface StockItemSummary {
+  id: string;
+  category: 'cement' | 'rod';
+  name: string; // Brand name (e.g. LNT) or Rod size (e.g. 12mm)
+  unit: 'Bags' | 'Kg';
+  opening_stock: number;
+  purchased_qty: number;
+  purchase_return_qty: number;
+  sold_qty: number;
+  sales_return_qty: number;
+  available_stock: number;
+  avg_purchase_rate: number;
+  default_selling_rate: number;
+  stock_value: number;
+}
+
 
 

@@ -16,7 +16,8 @@ import {
   BarChart3,
   Users,
   ChevronRight,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Truck
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -24,9 +25,12 @@ import {
   calculateSalesBreakdown,
   calculateCollectionsBreakdown,
   calculateCustomerOutstanding,
+  calculatePurchaseMetrics,
+  calculateInventoryStock,
   SalesBreakdown,
   CollectionsBreakdown,
   OutstandingSummary,
+  PurchaseSummaryMetrics,
 } from "@/lib/storage";
 import { Bill, DashboardMetrics } from "@/lib/types";
 import { PeriodPreset, resolvePeriod, periodToQuery, toYMD } from "@/lib/period";
@@ -49,6 +53,12 @@ export default function DashboardPage() {
   const [sales, setSales] = useState<SalesBreakdown | null>(null);
   const [collections, setCollections] = useState<CollectionsBreakdown | null>(null);
   const [outstanding, setOutstanding] = useState<OutstandingSummary | null>(null);
+  const [purchaseMetrics, setPurchaseMetrics] = useState<PurchaseSummaryMetrics | null>(null);
+  const [stockSummary, setStockSummary] = useState<{
+    totalCementBagsAvailable: number;
+    totalRodKgAvailable: number;
+    totalInventoryValue: number;
+  } | null>(null);
   const [recentBills, setRecentBills] = useState<Bill[]>([]);
 
   // Reporting period (shared by every dashboard section and passed on to the reports)
@@ -80,6 +90,8 @@ export default function DashboardPage() {
       setSales(s);
       setCollections(c);
       setOutstanding(calculateCustomerOutstanding(period.asOfDate));
+      setPurchaseMetrics(calculatePurchaseMetrics(dateFilter));
+      setStockSummary(calculateInventoryStock());
 
       const filteredBills = s.bills;
 
@@ -491,6 +503,99 @@ export default function DashboardPage() {
               <Wallet className="w-3.5 h-3.5" />
             </div>
             <span className="text-xs font-bold leading-tight">Record Cash Outflow</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Purchases, Supplier Payables & Live Stock Overview */}
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <Truck className="w-4 h-4 text-blue-600" />
+            <h3 className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider">
+              Purchases, Supplier Payables & Live Godown Stock
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/purchases/new"
+              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-2xs"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Record Purchase</span>
+            </Link>
+            <Link
+              href="/purchases"
+              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
+            >
+              <span>Suppliers & Ledger</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <Link
+            href="/purchases"
+            className="p-3.5 rounded-xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 transition-colors"
+          >
+            <span className="text-[10px] font-bold uppercase text-slate-500 block">
+              Net Purchases ({periodLabel})
+            </span>
+            <span className="text-lg font-black text-slate-900 block mt-0.5">
+              {formatCurrency(purchaseMetrics?.net_purchases || 0)}
+            </span>
+            <span className="text-[11px] text-slate-500">
+              {purchaseMetrics?.cement_bags_purchased || 0} Bags Cement •{" "}
+              {purchaseMetrics?.rod_kg_purchased || 0} Kg Rod
+            </span>
+          </Link>
+
+          <Link
+            href="/purchases?tab=payments"
+            className="p-3.5 rounded-xl bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-200/80 transition-colors"
+          >
+            <span className="text-[10px] font-bold uppercase text-emerald-800 block">
+              Paid to Suppliers ({periodLabel})
+            </span>
+            <span className="text-lg font-black text-emerald-700 block mt-0.5">
+              {formatCurrency(purchaseMetrics?.supplier_payments_total || 0)}
+            </span>
+            <span className="text-[11px] text-emerald-700">
+              Cash, SBI & Bank transfers
+            </span>
+          </Link>
+
+          <Link
+            href="/purchases?tab=suppliers"
+            className="p-3.5 rounded-xl bg-rose-50/40 hover:bg-rose-50 border border-rose-200/80 transition-colors"
+          >
+            <span className="text-[10px] font-bold uppercase text-rose-800 block">
+              Total Supplier Payable Due
+            </span>
+            <span className="text-lg font-black text-rose-700 block mt-0.5">
+              {formatCurrency(purchaseMetrics?.total_supplier_payable || 0)}
+            </span>
+            <span className="text-[11px] text-rose-700">
+              {purchaseMetrics?.unpaid_purchase_bills_count || 0} unpaid •{" "}
+              {purchaseMetrics?.partially_paid_purchase_bills_count || 0} partial bills
+            </span>
+          </Link>
+
+          <Link
+            href="/inventory"
+            className="p-3.5 rounded-xl bg-amber-50/40 hover:bg-amber-50 border border-amber-200/80 transition-colors"
+          >
+            <span className="text-[10px] font-bold uppercase text-amber-900 block">
+              Available Godown Stock
+            </span>
+            <span className="text-lg font-black text-slate-900 block mt-0.5">
+              {formatCurrency(stockSummary?.totalInventoryValue || 0)}
+            </span>
+            <span className="text-[11px] text-amber-800 font-semibold">
+              {stockSummary?.totalCementBagsAvailable || 0} Bags •{" "}
+              {stockSummary?.totalRodKgAvailable || 0} Kg Available →
+            </span>
           </Link>
         </div>
       </div>
