@@ -275,103 +275,103 @@ export default function DashboardPage() {
       )}
 
       {/* Primary Financial KPI Cards: Sales | Collections | Customer Outstanding */}
-      <div className="grid grid-cols-2 max-[340px]:grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
         {/* CARD 1: TOTAL SALES (blue) — filtered by bill date */}
         <Link
           href={`/reports/sales${reportQuery}`}
-          className="group bg-white rounded-xl p-3.5 sm:p-5 border border-slate-200 border-t-4 border-t-blue-600 shadow-2xs hover:shadow-sm hover:border-blue-300 transition-all flex flex-col justify-between h-full"
+          className="group bg-white rounded-xl p-3 sm:p-5 border border-slate-200 border-t-4 border-t-blue-600 shadow-2xs hover:shadow-xs hover:border-blue-300 transition-all flex flex-col justify-between h-full"
         >
           <div>
             <div className="flex items-start justify-between gap-1.5 mb-1.5 sm:mb-2">
               <div className="min-w-0">
-                <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-blue-700 leading-tight">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-700 leading-tight">
                   Total Sales
                 </div>
-                <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-tight mt-0.5">
-                  Gross sales · by bill date
+                <div className="text-[9px] sm:text-[11px] text-slate-400 font-medium leading-tight mt-0.5 truncate">
+                  Gross sales · bill date
                 </div>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+              <div className="p-1 sm:p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0">
                 <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight break-words">
+            <div className="text-base sm:text-2xl font-black text-slate-900 tracking-tight break-words">
               {formatCurrency(sales.gross_sales)}
             </div>
 
-            <dl className="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-[11px] sm:text-xs">
-              <div className="flex items-center justify-between gap-2">
+            <dl className="mt-2 pt-2 border-t border-slate-100 space-y-1 text-[10px] sm:text-xs">
+              <div className="flex items-center justify-between gap-1">
                 <dt className="text-slate-500">Bills posted</dt>
                 <dd className="font-semibold text-slate-800">{sales.bills.length}</dd>
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <dt className="text-slate-500">Approved returns</dt>
+              <div className="flex items-center justify-between gap-1">
+                <dt className="text-slate-500">Returns</dt>
                 <dd className="font-semibold text-rose-600 whitespace-nowrap">−{formatCurrency(sales.approved_returns)}</dd>
               </div>
-              <div className="flex items-center justify-between gap-2 pt-1 border-t border-dashed border-slate-200">
+              <div className="flex items-center justify-between gap-1 pt-1 border-t border-dashed border-slate-200">
                 <dt className="font-bold text-slate-700">Net sales</dt>
                 <dd className="font-bold text-blue-700 whitespace-nowrap">{formatCurrency(sales.net_sales)}</dd>
               </div>
             </dl>
           </div>
-          <div className="mt-2.5 flex items-center gap-0.5 text-[11px] font-bold text-blue-600 group-hover:text-blue-800">
+          <div className="mt-2.5 flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-blue-600 group-hover:text-blue-800">
             <span>Sales report</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </div>
         </Link>
 
         {/* CARD 2: TOTAL COLLECTIONS (green) — filtered by payment date */}
         <Link
           href={`/reports/collections${reportQuery}`}
-          className="group bg-white rounded-xl p-3.5 sm:p-5 border border-slate-200 border-t-4 border-t-emerald-600 shadow-2xs hover:shadow-sm hover:border-emerald-300 transition-all flex flex-col justify-between h-full"
+          className="group bg-white rounded-xl p-3 sm:p-5 border border-slate-200 border-t-4 border-t-emerald-600 shadow-2xs hover:shadow-xs hover:border-emerald-300 transition-all flex flex-col justify-between h-full"
         >
           <div>
             <div className="flex items-start justify-between gap-1.5 mb-1.5 sm:mb-2">
               <div className="min-w-0">
-                <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700 leading-tight">
-                  Total Collections
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700 leading-tight">
+                  Collections
                 </div>
-                <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-tight mt-0.5">
-                  {collections.count} receipts · by payment date
+                <div className="text-[9px] sm:text-[11px] text-slate-400 font-medium leading-tight mt-0.5 truncate">
+                  {collections.count} receipts
                 </div>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+              <div className="p-1 sm:p-2 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
                 <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight break-words">
+            <div className="text-base sm:text-2xl font-black text-slate-900 tracking-tight break-words">
               {formatCurrency(collections.total)}
             </div>
 
-            <dl className="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-[11px] sm:text-xs">
+            <dl className="mt-2 pt-2 border-t border-slate-100 space-y-1 text-[10px] sm:text-xs">
               {([
                 ["Cash", collections.cash],
                 ["UPI", collections.upi],
                 ["Bank", collections.bank],
-                ["Other modes", collections.other],
+                ["Other", collections.other],
               ] as [string, number][]).map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-2">
+                <div key={label} className="flex items-center justify-between gap-1">
                   <dt className="text-slate-500">{label}</dt>
                   <dd className="font-semibold text-slate-800 whitespace-nowrap">{formatCurrency(value)}</dd>
                 </div>
               ))}
             </dl>
           </div>
-          <div className="mt-2.5 flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 group-hover:text-emerald-800">
+          <div className="mt-2.5 flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-emerald-600 group-hover:text-emerald-800">
             <span>Collection report</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </div>
         </Link>
 
         {/* CARD 3: TOTAL CUSTOMER OUTSTANDING (orange/red) — balance as of period end */}
         <Link
           href={`/reports/outstanding${reportQuery}`}
-          className="group col-span-2 max-[340px]:col-span-1 lg:col-span-1 bg-white rounded-xl p-3.5 sm:p-5 border border-slate-200 border-t-4 border-t-orange-500 shadow-2xs hover:shadow-sm hover:border-orange-300 transition-all flex flex-col justify-between h-full"
+          className="group col-span-2 lg:col-span-1 bg-white rounded-xl p-3.5 sm:p-5 border border-slate-200 border-t-4 border-t-orange-500 shadow-2xs hover:shadow-xs hover:border-orange-300 transition-all flex flex-col justify-between h-full"
         >
           <div>
             <div className="flex items-start justify-between gap-1.5 mb-1.5 sm:mb-2">
               <div className="min-w-0">
-                <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange-700 leading-tight">
+                <div className="text-xs sm:text-xs font-bold uppercase tracking-wider text-orange-700 leading-tight">
                   Customer Outstanding
                 </div>
                 <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-tight mt-0.5">
@@ -382,61 +382,62 @@ export default function DashboardPage() {
                 <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="text-base sm:text-2xl font-bold text-rose-600 tracking-tight break-words">
+            <div className="text-lg sm:text-2xl font-black text-rose-600 tracking-tight break-words">
               {formatCurrency(outstanding.total_outstanding)}
             </div>
 
-            <dl className="mt-2.5 pt-2 border-t border-slate-100 grid grid-cols-2 lg:grid-cols-1 gap-x-4 gap-y-1 text-[11px] sm:text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <dt className="text-slate-500">Unpaid bill amount</dt>
+            <dl className="mt-2.5 pt-2 border-t border-slate-100 grid grid-cols-2 lg:grid-cols-1 gap-x-4 gap-y-1 text-[10px] sm:text-xs">
+              <div className="flex items-center justify-between gap-1">
+                <dt className="text-slate-500">Unpaid bills</dt>
                 <dd className="font-semibold text-slate-800 whitespace-nowrap">{formatCurrency(outstanding.total_unpaid_amount)}</dd>
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <dt className="text-slate-500">Unpaid / Partial bills</dt>
+              <div className="flex items-center justify-between gap-1">
+                <dt className="text-slate-500">Unpaid / Partial</dt>
                 <dd className="font-semibold text-slate-800 whitespace-nowrap">
                   {outstanding.unpaid_bills_count} / {outstanding.partially_paid_bills_count}
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-1">
                 <dt className="text-slate-500">Unallocated credits</dt>
                 <dd className="font-semibold text-emerald-700 whitespace-nowrap">{formatCurrency(outstanding.total_unallocated_credits)}</dd>
               </div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-1">
                 <dt className="text-slate-500">Customer advances</dt>
                 <dd className="font-semibold text-emerald-700 whitespace-nowrap">{formatCurrency(outstanding.total_advances)}</dd>
               </div>
             </dl>
           </div>
-          <div className="mt-2.5 flex items-center gap-0.5 text-[11px] font-bold text-orange-600 group-hover:text-orange-800">
+          <div className="mt-2.5 flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-orange-600 group-hover:text-orange-800">
             <span>Outstanding report</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </Link>
       </div>
 
-      {/* Secondary indicator: Cash Outflows (kept from the previous dashboard, same period) */}
+      {/* Secondary indicator: Cash Outflows (Compact Horizontal Bar) */}
       <Link
         href="/cash-flow"
-        className="flex items-center justify-between gap-3 bg-white rounded-xl px-3.5 sm:px-5 py-2.5 border border-slate-200 shadow-2xs hover:border-rose-200 transition-colors"
+        className="flex items-center justify-between gap-2.5 bg-white rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-200/90 shadow-2xs hover:border-rose-200 hover:shadow-xs transition-all group"
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 shrink-0">
+          <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 shrink-0 border border-rose-100">
             <Wallet className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Cash Outflows</div>
-            <div className="text-[10px] sm:text-[11px] text-slate-400 truncate">Godown, staff & shop outflows · {periodLabel}</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-700 leading-tight">Cash Outflows</div>
+            <div className="text-[10px] sm:text-[11px] text-slate-400 truncate leading-tight mt-0.5">Godown, staff & shop outflows · {periodLabel}</div>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-sm sm:text-base font-bold text-slate-900">{formatCurrency(metrics.cash_outflows)}</span>
-          <ChevronRight className="w-4 h-4 text-slate-400" />
+          <span className="text-[10px] font-semibold text-blue-600 group-hover:text-blue-700 hidden sm:inline">Details</span>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
         </div>
       </Link>
 
       {/* Quick Actions Section */}
-      <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-slate-200 shadow-2xs">
-        <div className="flex items-center justify-between mb-2.5">
+      <div className="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-2xs">
+        <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Quick Operations & Voucher Entry
           </span>
@@ -447,7 +448,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           <Link
             href="/sales/new?category=cement"
-            className="flex items-center gap-2 p-2.5 rounded-lg border border-emerald-200/80 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-900 transition-colors group"
+            className="flex items-center gap-2 p-2 sm:p-2.5 min-h-[44px] rounded-lg border border-emerald-200/80 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-900 transition-all active:scale-[0.98] group"
           >
             <div className="w-7 h-7 rounded-md bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <Package className="w-3.5 h-3.5" />
@@ -457,7 +458,7 @@ export default function DashboardPage() {
 
           <Link
             href="/sales/new?category=rod"
-            className="flex items-center gap-2 p-2.5 rounded-lg border border-amber-200/80 bg-amber-50/50 hover:bg-amber-50 text-amber-900 transition-colors group"
+            className="flex items-center gap-2 p-2 sm:p-2.5 min-h-[44px] rounded-lg border border-amber-200/80 bg-amber-50/50 hover:bg-amber-50 text-amber-900 transition-all active:scale-[0.98] group"
           >
             <div className="w-7 h-7 rounded-md bg-amber-600 text-white flex items-center justify-center shrink-0">
               <Hammer className="w-3.5 h-3.5" />
@@ -467,7 +468,7 @@ export default function DashboardPage() {
 
           <Link
             href="/sales/new?category=daily"
-            className="flex items-center gap-2 p-2.5 rounded-lg border border-blue-200/80 bg-blue-50/50 hover:bg-blue-50 text-blue-900 transition-colors group"
+            className="flex items-center gap-2 p-2 sm:p-2.5 min-h-[44px] rounded-lg border border-blue-200/80 bg-blue-50/50 hover:bg-blue-50 text-blue-900 transition-all active:scale-[0.98] group"
           >
             <div className="w-7 h-7 rounded-md bg-blue-600 text-white flex items-center justify-center shrink-0">
               <Zap className="w-3.5 h-3.5" />
@@ -477,7 +478,7 @@ export default function DashboardPage() {
 
           <Link
             href="/payments"
-            className="flex items-center gap-2 p-2.5 rounded-lg border border-purple-200/80 bg-purple-50/50 hover:bg-purple-50 text-purple-900 transition-colors group"
+            className="flex items-center gap-2 p-2 sm:p-2.5 min-h-[44px] rounded-lg border border-purple-200/80 bg-purple-50/50 hover:bg-purple-50 text-purple-900 transition-all active:scale-[0.98] group"
           >
             <div className="w-7 h-7 rounded-md bg-purple-600 text-white flex items-center justify-center shrink-0">
               <CreditCard className="w-3.5 h-3.5" />
@@ -487,7 +488,7 @@ export default function DashboardPage() {
 
           <Link
             href="/returns"
-            className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-800 transition-colors group"
+            className="flex items-center gap-2 p-2 sm:p-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-800 transition-all active:scale-[0.98] group"
           >
             <div className="w-7 h-7 rounded-md bg-slate-700 text-white flex items-center justify-center shrink-0">
               <RotateCcw className="w-3.5 h-3.5" />
@@ -497,7 +498,7 @@ export default function DashboardPage() {
 
           <Link
             href="/cash-flow"
-            className="flex items-center gap-2 p-2.5 rounded-lg border border-rose-200/80 bg-rose-50/50 hover:bg-rose-50 text-rose-900 transition-colors group"
+            className="flex items-center gap-2 p-2 sm:p-2.5 min-h-[44px] rounded-lg border border-rose-200/80 bg-rose-50/50 hover:bg-rose-50 text-rose-900 transition-all active:scale-[0.98] group"
           >
             <div className="w-7 h-7 rounded-md bg-rose-600 text-white flex items-center justify-center shrink-0">
               <Wallet className="w-3.5 h-3.5" />
@@ -507,94 +508,100 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Purchases, Supplier Payables & Live Stock Overview */}
-      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4 text-blue-600" />
-            <h3 className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider">
-              Purchases, Supplier Payables & Live Godown Stock
+      {/* Purchases, Supplier Payables & Live Stock Overview (Compact 2x2 Grid on Mobile) */}
+      <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-slate-200 shadow-2xs space-y-2.5 sm:space-y-3">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Truck className="w-4 h-4 text-blue-600 shrink-0" />
+            <h3 className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider truncate">
+              Purchases & Godown Stock
             </h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <Link
               href="/purchases/new"
-              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-2xs"
+              className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>Record Purchase</span>
+              <span>Record</span>
             </Link>
             <Link
               href="/purchases"
-              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 transition-colors"
             >
-              <span>Suppliers & Ledger</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <span>Ledger</span>
+              <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        {/* 2x2 on Mobile, 4-col on Desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
           <Link
             href="/purchases"
-            className="p-3.5 rounded-xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 transition-colors"
+            className="p-2.5 sm:p-3.5 rounded-xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 transition-colors flex flex-col justify-between"
           >
-            <span className="text-[10px] font-bold uppercase text-slate-500 block">
-              Net Purchases ({periodLabel})
-            </span>
-            <span className="text-lg font-black text-slate-900 block mt-0.5">
-              {formatCurrency(purchaseMetrics?.net_purchases || 0)}
-            </span>
-            <span className="text-[11px] text-slate-500">
-              {purchaseMetrics?.cement_bags_purchased || 0} Bags Cement •{" "}
-              {purchaseMetrics?.rod_kg_purchased || 0} Kg Rod
+            <div>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block truncate">
+                Net Purchases ({periodLabel})
+              </span>
+              <span className="text-sm sm:text-lg font-black text-slate-900 block mt-0.5">
+                {formatCurrency(purchaseMetrics?.net_purchases || 0)}
+              </span>
+            </div>
+            <span className="text-[10px] sm:text-[11px] text-slate-500 mt-1 block truncate">
+              {purchaseMetrics?.cement_bags_purchased || 0} Bags • {purchaseMetrics?.rod_kg_purchased || 0} Kg
             </span>
           </Link>
 
           <Link
             href="/purchases?tab=payments"
-            className="p-3.5 rounded-xl bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-200/80 transition-colors"
+            className="p-2.5 sm:p-3.5 rounded-xl bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-200/80 transition-colors flex flex-col justify-between"
           >
-            <span className="text-[10px] font-bold uppercase text-emerald-800 block">
-              Paid to Suppliers ({periodLabel})
-            </span>
-            <span className="text-lg font-black text-emerald-700 block mt-0.5">
-              {formatCurrency(purchaseMetrics?.supplier_payments_total || 0)}
-            </span>
-            <span className="text-[11px] text-emerald-700">
-              Cash, SBI & Bank transfers
+            <div>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase text-emerald-800 block truncate">
+                Paid to Suppliers
+              </span>
+              <span className="text-sm sm:text-lg font-black text-emerald-700 block mt-0.5">
+                {formatCurrency(purchaseMetrics?.supplier_payments_total || 0)}
+              </span>
+            </div>
+            <span className="text-[10px] sm:text-[11px] text-emerald-700 mt-1 block truncate">
+              Cash, SBI & Transfers
             </span>
           </Link>
 
           <Link
             href="/purchases?tab=suppliers"
-            className="p-3.5 rounded-xl bg-rose-50/40 hover:bg-rose-50 border border-rose-200/80 transition-colors"
+            className="p-2.5 sm:p-3.5 rounded-xl bg-rose-50/40 hover:bg-rose-50 border border-rose-200/80 transition-colors flex flex-col justify-between"
           >
-            <span className="text-[10px] font-bold uppercase text-rose-800 block">
-              Total Supplier Payable Due
-            </span>
-            <span className="text-lg font-black text-rose-700 block mt-0.5">
-              {formatCurrency(purchaseMetrics?.total_supplier_payable || 0)}
-            </span>
-            <span className="text-[11px] text-rose-700">
-              {purchaseMetrics?.unpaid_purchase_bills_count || 0} unpaid •{" "}
-              {purchaseMetrics?.partially_paid_purchase_bills_count || 0} partial bills
+            <div>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase text-rose-800 block truncate">
+                Supplier Payable Due
+              </span>
+              <span className="text-sm sm:text-lg font-black text-rose-700 block mt-0.5">
+                {formatCurrency(purchaseMetrics?.total_supplier_payable || 0)}
+              </span>
+            </div>
+            <span className="text-[10px] sm:text-[11px] text-rose-700 mt-1 block truncate">
+              {purchaseMetrics?.unpaid_purchase_bills_count || 0} unpaid · {purchaseMetrics?.partially_paid_purchase_bills_count || 0} partial
             </span>
           </Link>
 
           <Link
             href="/inventory"
-            className="p-3.5 rounded-xl bg-amber-50/40 hover:bg-amber-50 border border-amber-200/80 transition-colors"
+            className="p-2.5 sm:p-3.5 rounded-xl bg-amber-50/40 hover:bg-amber-50 border border-amber-200/80 transition-colors flex flex-col justify-between"
           >
-            <span className="text-[10px] font-bold uppercase text-amber-900 block">
-              Available Godown Stock
-            </span>
-            <span className="text-lg font-black text-slate-900 block mt-0.5">
-              {formatCurrency(stockSummary?.totalInventoryValue || 0)}
-            </span>
-            <span className="text-[11px] text-amber-800 font-semibold">
-              {stockSummary?.totalCementBagsAvailable || 0} Bags •{" "}
-              {stockSummary?.totalRodKgAvailable || 0} Kg Available →
+            <div>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase text-amber-900 block truncate">
+                Godown Stock
+              </span>
+              <span className="text-sm sm:text-lg font-black text-slate-900 block mt-0.5">
+                {formatCurrency(stockSummary?.totalInventoryValue || 0)}
+              </span>
+            </div>
+            <span className="text-[10px] sm:text-[11px] text-amber-800 font-semibold mt-1 block truncate">
+              {stockSummary?.totalCementBagsAvailable || 0} Bags • {stockSummary?.totalRodKgAvailable || 0} Kg →
             </span>
           </Link>
         </div>
@@ -690,14 +697,12 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-[220px] sm:h-64 w-full flex flex-col items-center justify-center rounded-xl bg-slate-50/70 border border-dashed border-slate-200 p-6 text-center">
-                <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-2.5">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <p className="text-xs sm:text-sm font-semibold text-slate-600">
+              <div className="h-28 sm:h-44 w-full flex flex-col items-center justify-center rounded-xl bg-slate-50/70 border border-dashed border-slate-200 p-4 text-center">
+                <BarChart3 className="w-5 h-5 text-slate-400 mb-1.5" />
+                <p className="text-xs font-semibold text-slate-600">
                   No sales or collections recorded for this period.
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+                <p className="text-[10px] text-slate-400 mt-0.5 max-w-xs">
                   Switch the reporting period filter above or create a new bill to view trend analytics.
                 </p>
               </div>
@@ -706,25 +711,25 @@ export default function DashboardPage() {
         </div>
 
         {/* Category Breakdown Donut */}
-        <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs flex flex-col justify-between">
+        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-slate-200 shadow-2xs flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1">
+            <h3 className="font-bold text-slate-900 text-sm mb-0.5">
               Sales by Category
             </h3>
-            <p className="text-xs text-slate-500 mb-3">
+            <p className="text-xs text-slate-500 mb-2.5">
               Daily / Electrical, Cement Sales & Rod / Steel
             </p>
 
             {categoryData.some((c) => c.value > 0) ? (
-              <div className="h-44 w-full flex items-center justify-center">
+              <div className="h-36 sm:h-44 w-full flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={categoryData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={48}
-                      outerRadius={72}
+                      innerRadius={44}
+                      outerRadius={68}
                       paddingAngle={3}
                       dataKey="value"
                     >
@@ -745,25 +750,25 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-36 sm:h-44 w-full flex flex-col items-center justify-center rounded-xl bg-slate-50/70 border border-dashed border-slate-200 p-4 text-center">
-                <PieChartIcon className="w-5 h-5 text-slate-400 mb-1.5" />
-                <span className="text-xs font-semibold text-slate-500">
+              <div className="h-24 sm:h-32 w-full flex flex-col items-center justify-center rounded-xl bg-slate-50/70 border border-dashed border-slate-200 p-3 text-center">
+                <PieChartIcon className="w-5 h-5 text-slate-400 mb-1" />
+                <span className="text-xs font-medium text-slate-500">
                   No category sales for this period.
                 </span>
               </div>
             )}
 
-            <div className="space-y-2 mt-3 pt-3 border-t border-slate-100">
+            <div className="space-y-1.5 mt-2.5 pt-2.5 border-t border-slate-100">
               {categoryData.map((cat) => (
                 <div key={cat.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: cat.color }}
                     ></span>
-                    <span className="text-slate-700 font-medium">{cat.name}</span>
+                    <span className="text-slate-700 font-medium truncate">{cat.name}</span>
                   </div>
-                  <span className="font-bold text-slate-900">{formatCurrency(cat.value)}</span>
+                  <span className="font-bold text-slate-900 shrink-0 ml-2">{formatCurrency(cat.value)}</span>
                 </div>
               ))}
             </div>
@@ -773,7 +778,7 @@ export default function DashboardPage() {
 
       {/* Recent Invoices & Transactions */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between gap-2">
+        <div className="p-3.5 sm:p-5 border-b border-slate-200 flex items-center justify-between gap-2">
           <div>
             <h3 className="font-bold text-slate-900 text-sm">
               Recent Invoices & Transactions
@@ -794,8 +799,18 @@ export default function DashboardPage() {
         {/* Mobile Compact Transaction Cards (< 768px) */}
         <div className="md:hidden divide-y divide-slate-100">
           {recentBills.length === 0 ? (
-            <div className="py-8 px-4 text-center text-slate-400 text-xs font-medium">
-              No sales invoices recorded for this period. Tap &quot;Create Bill&quot; to post a new invoice.
+            <div className="py-6 px-4 text-center space-y-2.5">
+              <Receipt className="w-6 h-6 text-slate-300 mx-auto" />
+              <p className="text-xs font-medium text-slate-500">
+                No sales invoices recorded for this period.
+              </p>
+              <Link
+                href="/sales/new"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-colors"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Create Bill</span>
+              </Link>
             </div>
           ) : (
             recentBills.map((bill) => {
@@ -817,23 +832,23 @@ export default function DashboardPage() {
                 bill.payment_status === "legacy_paid_yes" || bill.payment_status === "paid";
 
               return (
-                <div key={bill.id} className="p-3.5 hover:bg-slate-50/70 transition-colors space-y-2">
+                <div key={bill.id} className="p-3 hover:bg-slate-50/70 transition-colors space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-bold text-blue-600">
-                          Bill: {bill.bill_number}
+                          Bill #{bill.bill_number}
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${catBadgeClass}`}
+                          className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold border ${catBadgeClass}`}
                         >
                           {catLabel}
                         </span>
                       </div>
-                      <div className="text-xs font-bold text-slate-900 mt-1">
-                        Customer: {bill.customer_name}
+                      <div className="text-xs font-bold text-slate-900 mt-0.5">
+                        {bill.customer_name}
                         {bill.customer_name === "UNKNOWN" && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-normal">
+                          <span className="ml-1 px-1 py-0.2 rounded text-[9px] bg-slate-100 text-slate-600 font-normal">
                             Retail
                           </span>
                         )}
@@ -845,7 +860,7 @@ export default function DashboardPage() {
                         {formatCurrency(bill.total_amount)}
                       </div>
                       <span
-                        className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        className={`inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold ${
                           isPaid
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : "bg-amber-50 text-amber-700 border border-amber-200"
@@ -860,8 +875,8 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-                    <span>Date: {formatDate(bill.bill_date)}</span>
+                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                    <span>{formatDate(bill.bill_date)}</span>
                     <span className="truncate max-w-[180px]">
                       {bill.cement_details
                         ? `${bill.cement_details.qty_bags} Bags (${bill.cement_details.cement_type})`

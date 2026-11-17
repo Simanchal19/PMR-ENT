@@ -135,16 +135,21 @@ export default function Header() {
       </div>
 
       {/* Mobile Header (Below 768px) */}
-      <div className="md:hidden px-3.5 py-2.5 space-y-2">
-        {/* First Row: TPM Logo + Short Business Name + Logout + Hamburger Menu */}
+      <div className="md:hidden px-3.5 py-2 space-y-1.5">
+        {/* First Row: TPM Logo + Business Name + Logout + Hamburger Menu */}
         <div className="flex items-center justify-between gap-2">
           <Link href="/" className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-[#14243A] text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0 border border-blue-500/30">
               TPM
             </div>
-            <span className="font-extrabold text-sm text-[#14243A] tracking-tight truncate">
-              PRAMOD MAHARAJ
-            </span>
+            <div className="min-w-0 leading-tight">
+              <div className="font-extrabold text-xs sm:text-sm text-[#14243A] tracking-tight truncate uppercase">
+                THE PRAMOD MAHARAJ
+              </div>
+              <div className="text-[9px] text-blue-600 font-semibold tracking-wider uppercase">
+                ENTERPRISES ERP
+              </div>
+            </div>
           </Link>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -152,8 +157,8 @@ export default function Header() {
               type="button"
               onClick={handleLogout}
               aria-label="Logout"
-              className="w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center"
-              title="Sign out"
+              className="w-8 h-8 rounded-lg border border-slate-200/90 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center active:scale-95 transition-all shadow-2xs"
+              title="Sign out of TPM ERP"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -161,22 +166,22 @@ export default function Header() {
               type="button"
               onClick={handleOpenMobileMenu}
               aria-label="Open navigation menu"
-              className="w-9 h-9 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[#14243A] flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+              className="w-8 h-8 rounded-lg border border-slate-200/90 bg-slate-50 hover:bg-slate-100 text-[#14243A] flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-2xs"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Second Row: Dashboard Title & Subtitle (When on Dashboard) */}
+        {/* Second Row: Compact Dashboard Title (When on Dashboard) */}
         {pathname === "/" && (
-          <div className="pt-1.5 border-t border-slate-100">
-            <h1 className="text-base font-bold text-[#14243A] tracking-tight leading-snug">
+          <div className="pt-1 border-t border-slate-100 flex items-center justify-between min-w-0">
+            <h1 className="text-xs font-bold text-[#14243A] tracking-tight truncate">
               Financial & Operations Dashboard
             </h1>
-            <p className="text-[11px] text-slate-500 font-medium leading-tight">
-              Business financial overview
-            </p>
+            <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-2">
+              Overview
+            </span>
           </div>
         )}
       </div>
