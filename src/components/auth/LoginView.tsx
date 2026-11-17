@@ -157,7 +157,7 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#080E1A] text-slate-100 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen w-full bg-[#080E1A] text-slate-100 flex items-center justify-center p-3 sm:p-6 lg:p-12 relative overflow-x-hidden font-sans select-none py-8 sm:py-12">
       
       {/* Dynamic Ambient Background Lights */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-[130px] pointer-events-none" />
@@ -168,75 +168,75 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
 
       {/* ========================================================================= */}
-      {/* MAIN CONTAINER (Clean Glass Backdrop)                                     */}
+      {/* MAIN CONTAINER (Glass Frame on Desktop, Clean Frameless on Mobile)         */}
       {/* ========================================================================= */}
-      <div className="w-full max-w-5xl rounded-[2.5rem] bg-white/[0.03] backdrop-blur-2xl border border-white/10 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] p-6 sm:p-10 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 relative z-10">
+      <div className="w-full max-w-5xl rounded-3xl sm:rounded-[2.5rem] bg-transparent sm:bg-white/[0.03] sm:backdrop-blur-2xl border-0 sm:border border-white/10 shadow-none sm:shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] p-0 sm:p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-8 lg:gap-14 relative z-10">
         
         {/* ===================================================================== */}
-        {/* LEFT: MINIMALIST, HIGH-END SIGN-IN CARD (Ultra-clean, zero clutter)   */}
+        {/* LEFT / CENTER: MINIMALIST, HIGH-END SIGN-IN CARD                      */}
         {/* ===================================================================== */}
-        <div className="w-full lg:w-[420px] shrink-0 bg-white text-slate-900 rounded-3xl p-7 sm:p-9 shadow-2xl border border-slate-100 relative z-20">
+        <div className="w-full max-w-[420px] shrink-0 bg-white text-slate-900 rounded-3xl p-5 sm:p-8 lg:p-9 shadow-2xl border border-slate-100/90 relative z-20">
           
           {/* Brand Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#14243A] to-blue-700 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-900/20">
+          <div className="flex items-center gap-3 mb-5 sm:mb-6">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#14243A] to-blue-700 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-900/20 shrink-0">
               TPM
             </div>
             <div>
-              <div className="font-extrabold text-sm tracking-tight text-slate-950 uppercase leading-none">
+              <div className="font-extrabold text-sm sm:text-base tracking-tight text-slate-950 uppercase leading-none">
                 THE PRAMOD MAHARAJ
               </div>
-              <div className="text-[11px] text-blue-600 font-semibold tracking-wide mt-0.5">
+              <div className="text-[11px] sm:text-xs text-blue-600 font-semibold tracking-wide mt-1">
                 ENTERPRISES ERP
               </div>
             </div>
           </div>
 
           {/* Heading */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-extrabold text-slate-950 tracking-tight">
+          <div className="mb-5 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
               Sign In
             </h1>
           </div>
 
-          {/* Clean 3-Way Role Switcher (Zero extra description boxes) */}
-          <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/80 mb-6">
+          {/* Clean 3-Way Role Switcher (Grid layout prevents any text truncation on mobile) */}
+          <div className="grid grid-cols-3 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 mb-5 sm:mb-6">
             <button
               type="button"
               onClick={() => handleTabChange("owner")}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-1 sm:px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1 sm:gap-1.5 ${
                 activePortal === "owner"
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <Crown className="w-3.5 h-3.5" />
+              <Crown className="w-3.5 h-3.5 shrink-0" />
               <span>Owner</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("manager")}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-1 sm:px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1 sm:gap-1.5 ${
                 activePortal === "manager"
                   ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <BriefcaseBusiness className="w-3.5 h-3.5" />
+              <BriefcaseBusiness className="w-3.5 h-3.5 shrink-0" />
               <span>Manager</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("admin")}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-1 sm:px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1 sm:gap-1.5 ${
                 activePortal === "admin"
                   ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span>Admin</span>
             </button>
           </div>
@@ -283,10 +283,14 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
                 <input
                   type="text"
                   required
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  inputMode="email"
                   value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
                   placeholder="username@pramodmaharaj.in"
-                  className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-medium text-slate-900 text-sm transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-medium text-slate-900 text-base sm:text-sm transition-all placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -303,15 +307,17 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-medium text-slate-900 text-sm transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-medium text-slate-900 text-base sm:text-sm transition-all placeholder:text-slate-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -320,7 +326,7 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
 
             {/* Remember Me & Forgot Password Row */}
             <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+              <label className="flex items-center gap-2 cursor-pointer select-none py-1">
                 <input
                   type="checkbox"
                   checked={rememberMe}
@@ -338,7 +344,7 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
                   setResetError(null);
                   setResetSuccess(null);
                 }}
-                className="font-semibold text-blue-600 hover:text-blue-700 text-xs transition-colors"
+                className="font-semibold text-blue-600 hover:text-blue-700 text-xs transition-colors py-1"
               >
                 Forgot password?
               </button>
@@ -348,7 +354,7 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60 bg-gradient-to-r mt-3 ${
+              className={`w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-60 bg-gradient-to-r mt-3 ${
                 activePortal === "owner"
                   ? "from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25"
                   : activePortal === "manager"
@@ -370,22 +376,54 @@ export default function LoginView({ initialRole = null }: LoginViewProps) {
             </button>
           </form>
 
-          {/* Discreet Quick Autofill */}
-          <div className="mt-5 text-center">
-            <button
-              type="button"
-              onClick={() => handleQuickFill(activePortal)}
-              className="text-[11px] text-slate-400 hover:text-blue-600 font-medium transition-colors"
-            >
-              Auto-fill demo credentials ({activePortal})
-            </button>
+          {/* Quick Demo Credentials Pill Shortcuts */}
+          <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+              <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+              <span>Tap to autofill demo account:</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 w-full">
+              <button
+                type="button"
+                onClick={() => { handleTabChange("owner"); handleQuickFill("owner"); }}
+                className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-semibold transition-all border ${
+                  activePortal === "owner" 
+                    ? "bg-blue-50 border-blue-200 text-blue-700 shadow-xs" 
+                    : "bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Owner
+              </button>
+              <button
+                type="button"
+                onClick={() => { handleTabChange("manager"); handleQuickFill("manager"); }}
+                className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-semibold transition-all border ${
+                  activePortal === "manager" 
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-xs" 
+                    : "bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Manager
+              </button>
+              <button
+                type="button"
+                onClick={() => { handleTabChange("admin"); handleQuickFill("admin"); }}
+                className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-semibold transition-all border ${
+                  activePortal === "admin" 
+                    ? "bg-purple-50 border-purple-200 text-purple-700 shadow-xs" 
+                    : "bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Admin
+              </button>
+            </div>
           </div>
         </div>
 
         {/* ===================================================================== */}
-        {/* RIGHT: DYNAMIC 3D ARTISTIC FOCAL POINT (Like Image 2, ZERO TEXT BLOAT) */}
+        {/* RIGHT: DYNAMIC 3D ARTISTIC FOCAL POINT (Hidden on mobile/tablet)      */}
         {/* ===================================================================== */}
-        <div className="flex-1 w-full flex items-center justify-center relative py-6 lg:py-10">
+        <div className="hidden lg:flex flex-1 w-full items-center justify-center relative py-6 lg:py-10">
           
           <div className="relative w-full max-w-[440px] aspect-square flex items-center justify-center">
             
