@@ -26,7 +26,10 @@ import {
   X, 
   ChevronDown,
   Settings2,
-  Truck
+  Truck,
+  UserPlus,
+  Phone,
+  MapPin
 } from "lucide-react";
 import Link from "next/link";
 import { CementBrandManagerModal, RodSizeManagerModal } from "@/components/admin/MasterCatalogModals";
@@ -69,6 +72,13 @@ export default function CreateBillPage() {
   // Additional Charges: Labour & Transport Costs (Optional)
   const [labourCost, setLabourCost] = useState("");
   const [transportCost, setTransportCost] = useState("");
+
+  // Quick Add Customer Modal Popup
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerAddress, setNewCustomerAddress] = useState("");
+  const [newCustomerOpeningBalance, setNewCustomerOpeningBalance] = useState("");
 
   useEffect(() => {
     const list = getCustomers();
@@ -211,13 +221,38 @@ export default function CreateBillPage() {
     handleSelectCustomer(unknownCust);
   };
 
-  const handleCreateNewParty = (partyName: string) => {
-    if (!partyName.trim()) return;
+  const handleOpenAddCustomerModal = (initialName?: string) => {
+    const raw = initialName || customerSearch || "";
+    setNewCustomerName(raw.trim().toUpperCase());
+    setNewCustomerPhone("");
+    setNewCustomerAddress("");
+    setNewCustomerOpeningBalance("");
+    setIsDropdownOpen(false);
+    setShowAddCustomerModal(true);
+  };
+
+  const handleSaveNewCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomerName.trim()) {
+      alert("Please enter customer / party name.");
+      return;
+    }
+
+    const opBal = parseFloat(newCustomerOpeningBalance) || 0;
     const newCust = createCustomer({
-      name: partyName.trim().toUpperCase()
+      name: newCustomerName.trim().toUpperCase(),
+      phone: newCustomerPhone.trim(),
+      address: newCustomerAddress.trim() || "Bhubaneswar / Khordha",
+      opening_balance: opBal,
     });
+
     setCustomers(getCustomers());
     handleSelectCustomer(newCust);
+    setShowAddCustomerModal(false);
+  };
+
+  const handleCreateNewParty = (partyName: string) => {
+    handleOpenAddCustomerModal(partyName);
   };
 
   const handleAddDailyItem = () => {
@@ -484,15 +519,26 @@ export default function CreateBillPage() {
                   <label className="block text-xs font-bold text-slate-700">
                     Customer / Party Name <span className="text-rose-500">*</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleSelectUnknownCustomer}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-                    title="Select Walk-in / Cash Counter Retail Party"
-                  >
-                    <Zap className="w-3 h-3 text-amber-500" />
-                    <span>Quick: Retail (UNKNOWN)</span>
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAddCustomerModal(customerSearch)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                      title="Add a new customer with mobile, address & opening balance"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>New Party</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectUnknownCustomer}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                      title="Select Walk-in / Cash Counter Retail Party"
+                    >
+                      <Zap className="w-3 h-3 text-amber-500" />
+                      <span>Retail (UNKNOWN)</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="relative">
@@ -1038,6 +1084,132 @@ export default function CreateBillPage() {
             </div>
           </div>
         </form>
+      )}
+
+      {/* Quick Add Customer Modal Popup */}
+      {showAddCustomerModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                    Add New Customer / Party
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Enter mobile, address & opening balance
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddCustomerModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewCustomer} className="space-y-3.5 text-xs">
+              {/* Customer Name */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Customer / Party Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={newCustomerName}
+                  onChange={(e) => setNewCustomerName(e.target.value)}
+                  placeholder="e.g. MANOJ BEHERA"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 font-bold uppercase text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Mobile Number */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Mobile / Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="tel"
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    placeholder="+91 94370 00000"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  For WhatsApp bills and payment reminders
+                </span>
+              </div>
+
+              {/* Address / Location */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Address / Site Location
+                </label>
+                <div className="relative">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={newCustomerAddress}
+                    onChange={(e) => setNewCustomerAddress(e.target.value)}
+                    placeholder="e.g. Chikiti Pentho / Bhubaneswar"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Opening Balance */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Opening Balance (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newCustomerOpeningBalance}
+                    onChange={(e) => setNewCustomerOpeningBalance(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-200 text-slate-900 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Existing outstanding due before this bill (leave 0 if fresh account)
+                </span>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCustomerModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-sm transition-colors flex items-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save & Select Customer</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Admin Master Catalog Modals */}
