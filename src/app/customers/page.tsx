@@ -16,6 +16,7 @@ import {
 import PaymentAllocationModal from "@/components/payments/PaymentAllocationModal";
 import { Customer, Bill, Payment, SalesReturn, UserRole, BusinessProfile } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { exportElementToPdf } from "@/lib/pdfExport";
 import { 
   Search, Plus, UserPlus, FileSpreadsheet, Eye, X, Check, Phone, MapPin, 
   Receipt, CreditCard, Printer, Download, ArrowDownRight, ArrowUpRight, 
@@ -321,70 +322,20 @@ export default function CustomersPage() {
     );
   };
 
-  // High-Resolution PDF Download Handler using offscreen clone at (0, 0)
+  // High-Resolution PDF Download Handler using exportElementToPdf (matches exact A4 portrait dimensions)
   const handleDownloadPDF = async () => {
     if (!selectedCustomer) return;
     setIsGeneratingPDF(true);
     try {
-      // Dynamic script loader for html2pdf
-      const html2pdfLib =
-        (window as any).html2pdf ||
-        (await new Promise((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-          script.onload = () => resolve((window as any).html2pdf);
-          script.onerror = () => reject(new Error("Unable to load PDF library"));
-          document.head.appendChild(script);
-        }));
-
-      const source = document.getElementById("printable-ledger-doc");
-      if (!source) throw new Error("Document element not found");
-
-      // Clone node into an isolated offscreen container positioned at (0, 0)
-      // This completely prevents horizontal offset clipping in html2canvas!
-      const clone = source.cloneNode(true) as HTMLElement;
-      clone.style.width = "740px";
-      clone.style.minWidth = "740px";
-      clone.style.maxWidth = "740px";
-      clone.style.margin = "0";
-      clone.style.padding = "20px";
-      clone.style.boxShadow = "none";
-      clone.style.border = "none";
-      clone.style.borderRadius = "0";
-      clone.style.background = "#ffffff";
-
-      const wrapper = document.createElement("div");
-      wrapper.style.position = "fixed";
-      wrapper.style.top = "0";
-      wrapper.style.left = "0";
-      wrapper.style.width = "740px";
-      wrapper.style.zIndex = "-9999";
-      wrapper.style.opacity = "1";
-      wrapper.style.pointerEvents = "none";
-      wrapper.style.background = "#ffffff";
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-
-      const safeName = selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, "_");
-      const opt = {
-        margin: [6, 6, 6, 6],
+      const safeName = selectedCustomer.name.replace(/[^a-zA-Z0-9_-]/g, "_");
+      await exportElementToPdf({
+        elementId: "printable-ledger-doc",
         filename: `${safeName}_Ledger_Statement.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          letterRendering: true,
-          scrollY: 0,
-          scrollX: 0
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-      };
-
-      await html2pdfLib().set(opt).from(clone).save();
-      document.body.removeChild(wrapper);
+        widthPx: 760,
+        orientation: "portrait",
+      });
     } catch (err) {
       console.warn("Direct PDF generation fallback to print-to-PDF:", err);
-      // Fallback: trigger print dialog where user can select "Save as PDF"
       handlePrint();
     } finally {
       setIsGeneratingPDF(false);
@@ -674,295 +625,298 @@ export default function CustomersPage() {
               </div>
 
               {/* Scrollable Document & Allocation Area */}
-              <div className="p-2.5 sm:p-6 overflow-y-auto overflow-x-hidden flex-1 bg-slate-200/60 flex flex-col">
+              <div className="p-2 sm:p-5 overflow-auto flex-1 bg-slate-200/70">
                 {ledgerTab === "statement" ? (
-                  <>
-                    {/* Unallocated Payments Notice Banner on Statement view */}
-                    {totalCustomerUnallocated > 0.005 && (
-                      <div className="mb-3 max-w-4xl w-full mx-auto p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs no-print">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                          <div className="text-xs">
-                            <span className="font-bold text-amber-950">Unallocated Payment Credit: </span>
-                            <span className="font-extrabold text-emerald-700">{formatCurrency(totalCustomerUnallocated)}</span>
-                            <span className="text-slate-500 ml-1">
-                              ({unallocatedPayments.length} receipt{unallocatedPayments.length > 1 ? "s" : ""})
+                  <div className="w-fit min-w-full flex justify-start sm:justify-center">
+                    <div className="flex flex-col items-start sm:items-center">
+                      {/* Unallocated Payments Notice Banner on Statement view */}
+                      {totalCustomerUnallocated > 0.005 && (
+                        <div className="mb-3 w-[760px] max-w-full p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between gap-3 shadow-2xs no-print">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                            <div className="text-xs">
+                              <span className="font-bold text-amber-950">Unallocated Payment Credit: </span>
+                              <span className="font-extrabold text-emerald-700">{formatCurrency(totalCustomerUnallocated)}</span>
+                              <span className="text-slate-500 ml-1">
+                                ({unallocatedPayments.length} receipt{unallocatedPayments.length > 1 ? "s" : ""})
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (unallocatedPayments.length > 0) {
+                                setAllocationPayment(unallocatedPayments[0]);
+                                setShowAllocationModal(true);
+                              } else {
+                                setLedgerTab("allocations");
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs shrink-0 flex items-center gap-1.5 justify-center"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Allocate to Bills</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Document Sheet Container: Fixed 760px A4 Portrait Width (Single Page) */}
+                      <div
+                        id="printable-ledger-doc"
+                        style={{ width: "760px", minWidth: "760px", maxWidth: "760px" }}
+                        className="bg-white text-slate-900 p-6 space-y-3.5 text-xs rounded-xl border border-slate-300 shadow-xl box-border font-sans shrink-0 my-1"
+                      >
+                        {/* 1. Official Header / Business Letterhead */}
+                        <div className="flex items-center justify-between pb-3 border-b-2 border-slate-900">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-[#14243A] text-white font-black flex items-center justify-center text-base tracking-wider shrink-0 shadow-xs">
+                              TPM
+                            </div>
+                            <div>
+                              <h1 className="text-xl font-black text-slate-950 tracking-tight uppercase leading-tight">
+                                {businessProfile.name}
+                              </h1>
+                              <p className="text-[11px] text-blue-900 font-bold uppercase tracking-wider">
+                                Wholesale & Retail: Cement, TMT Steel Rods, Electricals & Hardware
+                              </p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                {businessProfile.address} {businessProfile.phone ? `• Mob: ${businessProfile.phone}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="inline-block px-2.5 py-1 rounded bg-slate-100 border border-slate-300 font-mono font-bold text-slate-900 text-[11px] shadow-2xs">
+                              GSTIN: {businessProfile.gstin}
                             </span>
+                            <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                              Email: {businessProfile.email}
+                            </div>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (unallocatedPayments.length > 0) {
-                              setAllocationPayment(unallocatedPayments[0]);
-                              setShowAllocationModal(true);
-                            } else {
-                              setLedgerTab("allocations");
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs shrink-0 flex items-center gap-1.5 justify-center"
-                        >
-                          <CreditCard className="w-3.5 h-3.5" />
-                          <span>Allocate to Bills</span>
-                        </button>
-                      </div>
-                    )}
 
-                    {/* Document Sheet Container: Responsive container with full width and auto margins */}
-                    <div
-                      id="printable-ledger-doc"
-                      className="bg-white text-slate-900 p-4 sm:p-7 space-y-4 text-xs rounded-2xl border border-slate-300 shadow-lg max-w-4xl w-full mx-auto font-sans"
-                    >
-                  {/* 1. Official Header / Business Letterhead */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-slate-900">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#14243A] text-white font-black flex items-center justify-center text-base tracking-wider shrink-0 shadow-xs">
-                        TPM
-                      </div>
-                      <div>
-                        <h1 className="text-lg sm:text-xl font-black text-slate-950 tracking-tight uppercase leading-tight">
-                          {businessProfile.name}
-                        </h1>
-                        <p className="text-[10px] sm:text-[11px] text-blue-900 font-bold uppercase tracking-wider">
-                          Wholesale & Retail: Cement, TMT Steel Rods, Electricals & Hardware
-                        </p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          {businessProfile.address} {businessProfile.phone ? `• Mob: ${businessProfile.phone}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-left sm:text-right shrink-0">
-                      <span className="inline-block px-2.5 py-1 rounded bg-slate-100 border border-slate-300 font-mono font-bold text-slate-900 text-[10px] sm:text-[11px] shadow-2xs">
-                        GSTIN: {businessProfile.gstin}
-                      </span>
-                      <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                        Email: {businessProfile.email}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 2. Statement Title Bar */}
-                  <div className="bg-[#14243A] text-white px-3.5 py-2 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-xs">
-                    <div>
-                      <h2 className="font-bold text-xs uppercase tracking-wider text-blue-200">
-                        Statement of Account & Customer Running Ledger
-                      </h2>
-                      <p className="text-[9px] text-slate-300">
-                        Chronological journal of posted bills, payments, and credit notes
-                      </p>
-                    </div>
-                    <div className="text-left sm:text-right text-xs">
-                      <span className="text-slate-400 text-[10px]">Statement Date: </span>
-                      <span className="font-bold text-white text-[11px]">{formatDate(new Date().toISOString())}</span>
-                    </div>
-                  </div>
-
-                  {/* 3. Customer Info & Summary Box */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    {/* Left: Customer Info */}
-                    <div className="space-y-0.5">
-                      <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                        Account / Customer Details
-                      </div>
-                      <div className="text-sm font-black text-slate-950 uppercase leading-tight">
-                        {selectedCustomer.name}
-                      </div>
-                      <div className="text-[11px] text-slate-600 flex items-center gap-2 pt-0.5 flex-wrap">
-                        <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 text-[9px]">
-                          {selectedCustomer.code || "CUST-0001"}
-                        </span>
-                        {selectedCustomer.phone && <span className="font-semibold text-slate-700">📞 {selectedCustomer.phone}</span>}
-                      </div>
-                      <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="truncate">{selectedCustomer.address || "Bhubaneswar / Khordha, Odisha"}</span>
-                      </div>
-                    </div>
-
-                    {/* Right: Balance Overview Box */}
-                    <div className="grid grid-cols-3 gap-1.5 text-center p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
-                      <div className="p-1 border-r border-slate-100 flex flex-col justify-center">
-                        <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Invoiced</div>
-                        <div className="text-xs font-black text-slate-900 mt-0.5">
-                          {formatCurrency(totalInvoiced)}
+                        {/* 2. Statement Title Bar */}
+                        <div className="bg-[#14243A] text-white px-3.5 py-1.5 rounded-lg flex items-center justify-between shadow-xs">
+                          <div>
+                            <h2 className="font-bold text-xs uppercase tracking-wider text-blue-200">
+                              Statement of Account & Customer Running Ledger
+                            </h2>
+                            <p className="text-[9px] text-slate-300">
+                              Chronological journal of posted bills, payments, and credit notes
+                            </p>
+                          </div>
+                          <div className="text-right text-xs shrink-0">
+                            <span className="text-slate-400 text-[10px]">Statement Date: </span>
+                            <span className="font-bold text-white text-[11px]">{formatDate(new Date().toISOString())}</span>
+                          </div>
                         </div>
-                        <div className="text-[8px] text-slate-400 font-medium">Debits (+)</div>
-                      </div>
-                      <div className="p-1 border-r border-slate-100 flex flex-col justify-center">
-                        <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Received</div>
-                        <div className="text-xs font-black text-emerald-700 mt-0.5">
-                          {formatCurrency(totalReceived)}
-                        </div>
-                        <div className="text-[8px] text-emerald-600 font-semibold">Credits (-)</div>
-                      </div>
-                      <div className={`p-1 rounded-md flex flex-col justify-center ${isOutstanding ? "bg-rose-50 border border-rose-200" : "bg-emerald-50 border border-emerald-200"}`}>
-                        <div className="text-[9px] font-bold uppercase tracking-tight text-slate-600">Net Due</div>
-                        <div className={`text-xs font-black mt-0.5 ${isOutstanding ? "text-rose-600" : "text-emerald-700"}`}>
-                          {formatCurrency(Math.abs(netClosingBalance))}
-                        </div>
-                        <div className="text-[8px] font-bold text-slate-500 uppercase">
-                          {netClosingBalance > 0 ? "Dr (Due)" : netClosingBalance < 0 ? "Cr (Adv)" : "Cleared"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* 4. Chronological Ledger Table with Horizontal Scroll */}
-                  <div className="border border-slate-300 rounded-xl overflow-x-auto shadow-2xs">
-                    <table className="w-full min-w-[680px] table-fixed text-left text-[11px] border-collapse">
-                      <colgroup>
-                        <col style={{ width: "68px" }} />
-                        <col style={{ width: "96px" }} />
-                        <col style={{ width: "200px" }} />
-                        <col style={{ width: "52px" }} />
-                        <col style={{ width: "82px" }} />
-                        <col style={{ width: "82px" }} />
-                        <col style={{ width: "110px" }} />
-                      </colgroup>
-                      <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300 text-[10px] uppercase">
-                        <tr>
-                          <th className="py-2.5 px-2">Date</th>
-                          <th className="py-2.5 px-2">Doc #</th>
-                          <th className="py-2.5 px-2">Particulars / Description</th>
-                          <th className="py-2.5 px-1 text-center">Type</th>
-                          <th className="py-2.5 px-2 text-right">Debit (₹)</th>
-                          <th className="py-2.5 px-2 text-right">Credit (₹)</th>
-                          <th className="py-2.5 px-2.5 text-right">Balance (₹)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 text-slate-800">
-                        {/* Opening Balance Row if present */}
-                        {selectedCustomer.opening_balance !== 0 && (
-                          <tr className="bg-slate-50/70 italic text-[10px]">
-                            <td className="py-2 px-2 font-mono text-slate-500">—</td>
-                            <td className="py-2 px-2 font-mono text-slate-500 truncate">OB-001</td>
-                            <td className="py-2 px-2 font-semibold text-slate-800 truncate">Opening Balance Brought Forward</td>
-                            <td className="py-2 px-1 text-center">
-                              <span className="px-1.5 py-0.5 rounded text-[8px] bg-slate-200 text-slate-700 font-bold font-mono">OP</span>
-                            </td>
-                            <td className="py-2 px-2 text-right font-mono whitespace-nowrap">
-                              {selectedCustomer.opening_balance > 0 ? formatCurrency(selectedCustomer.opening_balance) : "—"}
-                            </td>
-                            <td className="py-2 px-2 text-right font-mono whitespace-nowrap">
-                              {selectedCustomer.opening_balance < 0 ? formatCurrency(Math.abs(selectedCustomer.opening_balance)) : "—"}
-                            </td>
-                            <td className="py-2 px-2.5 text-right font-bold font-mono text-slate-900 whitespace-nowrap">
-                              <span>{formatCurrency(Math.abs(selectedCustomer.opening_balance))}</span>
-                              <span className={`ml-1 text-[9px] font-black ${selectedCustomer.opening_balance > 0 ? "text-rose-700" : "text-emerald-700"}`}>
-                                {selectedCustomer.opening_balance > 0 ? "Dr" : "Cr"}
+                        {/* 3. Customer Info & Summary Box */}
+                        <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          {/* Left: Customer Info */}
+                          <div className="space-y-0.5">
+                            <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                              Account / Customer Details
+                            </div>
+                            <div className="text-sm font-black text-slate-950 uppercase leading-tight">
+                              {selectedCustomer.name}
+                            </div>
+                            <div className="text-[11px] text-slate-600 flex items-center gap-2 pt-0.5">
+                              <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 text-[9px]">
+                                {selectedCustomer.code || "CUST-0001"}
                               </span>
-                            </td>
-                          </tr>
-                        )}
+                              {selectedCustomer.phone && <span className="font-semibold text-slate-700">📞 {selectedCustomer.phone}</span>}
+                            </div>
+                            <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{selectedCustomer.address || "Bhubaneswar / Khordha, Odisha"}</span>
+                            </div>
+                          </div>
 
-                        {ledgerEntries.length === 0 && selectedCustomer.opening_balance === 0 ? (
-                          <tr>
-                            <td colSpan={7} className="py-6 text-center text-slate-400 font-medium">
-                              No transactions recorded for this customer yet.
-                            </td>
-                          </tr>
-                        ) : (
-                          ledgerEntries.map((e) => (
-                            <tr key={e.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-2 px-2 font-mono text-slate-600 whitespace-nowrap text-[10px] truncate">
-                                {e.date}
-                              </td>
-                              <td className="py-2 px-2 font-mono font-bold text-slate-900 whitespace-nowrap text-[10px] truncate" title={e.docNumber}>
-                                {e.docNumber}
-                              </td>
-                              <td className="py-2 px-2 text-[10px] leading-tight">
-                                <div className="font-semibold text-slate-900 break-words line-clamp-2">{e.particulars}</div>
-                              </td>
-                              <td className="py-2 px-1 text-center">
-                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold inline-block ${
-                                  e.type === "BILL"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : e.type === "PAYMENT"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : "bg-purple-100 text-purple-800"
-                                }`}>
-                                  {e.category}
-                                </span>
-                              </td>
-                              <td className="py-2 px-2 text-right font-mono font-semibold text-slate-900 text-[10px] whitespace-nowrap">
-                                {e.debit > 0 ? formatCurrency(e.debit) : "—"}
-                              </td>
-                              <td className="py-2 px-2 text-right font-mono font-semibold text-emerald-700 text-[10px] whitespace-nowrap">
-                                {e.credit > 0 ? formatCurrency(e.credit) : "—"}
-                              </td>
-                              <td className="py-2 px-2.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-[10px]">
-                                <span>{formatCurrency(Math.abs(e.balance))}</span>
-                                <span className={`ml-1 text-[9px] font-black ${e.balance > 0 ? "text-rose-700" : e.balance < 0 ? "text-emerald-700" : "text-slate-400"}`}>
-                                  {e.balance > 0 ? "Dr" : e.balance < 0 ? "Cr" : ""}
-                                </span>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                      <tfoot className="bg-slate-100 border-t-2 border-slate-300 font-bold text-slate-900 text-[11px]">
-                        <tr>
-                          <td colSpan={4} className="py-2.5 px-2.5 text-right uppercase tracking-wider text-[10px]">
-                            Period Total:
-                          </td>
-                          <td className="py-2.5 px-2 text-right font-mono font-black text-slate-950 whitespace-nowrap text-[10px]">
-                            {formatCurrency(totalInvoiced)}
-                          </td>
-                          <td className="py-2.5 px-2 text-right font-mono font-black text-emerald-700 whitespace-nowrap text-[10px]">
-                            {formatCurrency(totalReceived)}
-                          </td>
-                          <td className="py-2.5 px-2.5 text-right font-mono font-black whitespace-nowrap text-[10px]">
-                            <span className={isOutstanding ? "text-rose-600" : "text-emerald-700"}>
-                              {formatCurrency(Math.abs(netClosingBalance))}
-                            </span>
-                            <span className={`ml-1 text-[9px] font-black ${isOutstanding ? "text-rose-700" : "text-emerald-700"}`}>
-                              {netClosingBalance > 0 ? "Dr" : netClosingBalance < 0 ? "Cr" : ""}
-                            </span>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                          {/* Right: Balance Overview Box */}
+                          <div className="grid grid-cols-3 gap-1.5 text-center p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                            <div className="p-1 border-r border-slate-100 flex flex-col justify-center">
+                              <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Invoiced</div>
+                              <div className="text-xs font-black text-slate-900 mt-0.5">
+                                {formatCurrency(totalInvoiced)}
+                              </div>
+                              <div className="text-[8px] text-slate-400 font-medium">Debits (+)</div>
+                            </div>
+                            <div className="p-1 border-r border-slate-100 flex flex-col justify-center">
+                              <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Received</div>
+                              <div className="text-xs font-black text-emerald-700 mt-0.5">
+                                {formatCurrency(totalReceived)}
+                              </div>
+                              <div className="text-[8px] text-emerald-600 font-semibold">Credits (-)</div>
+                            </div>
+                            <div className={`p-1 rounded-md flex flex-col justify-center ${isOutstanding ? "bg-rose-50 border border-rose-200" : "bg-emerald-50 border border-emerald-200"}`}>
+                              <div className="text-[9px] font-bold uppercase tracking-tight text-slate-600">Net Due</div>
+                              <div className={`text-xs font-black mt-0.5 ${isOutstanding ? "text-rose-600" : "text-emerald-700"}`}>
+                                {formatCurrency(Math.abs(netClosingBalance))}
+                              </div>
+                              <div className="text-[8px] font-bold text-slate-500 uppercase">
+                                {netClosingBalance > 0 ? "Dr (Due)" : netClosingBalance < 0 ? "Cr (Adv)" : "Cleared"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
-                  {/* 5. Terms & Signatures Box */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-3 border-t border-slate-200">
-                    <div className="space-y-1 text-[9px] text-slate-500">
-                      <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                        Terms & Conditions:
-                      </div>
-                      <p>1. Please verify statement entries and report any discrepancy within 7 days.</p>
-                      <p>2. Overdue balances are subject to agreed commercial credit terms.</p>
-                      <p>3. This extract represents active reconciled entries in TPM Business ERP.</p>
-                      <div className="pt-3 sm:pt-5">
-                        <div className="border-t border-slate-300 w-44 pt-1 text-[9px] font-semibold text-slate-600">
-                          Customer Signature / Seal
+                        {/* 4. Chronological Ledger Table with Fixed Column Widths */}
+                        <div className="border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
+                          <table className="w-full table-fixed text-left text-[11px] border-collapse">
+                            <colgroup>
+                              <col style={{ width: "70px" }} />
+                              <col style={{ width: "95px" }} />
+                              <col style={{ width: "210px" }} />
+                              <col style={{ width: "55px" }} />
+                              <col style={{ width: "85px" }} />
+                              <col style={{ width: "85px" }} />
+                              <col style={{ width: "110px" }} />
+                            </colgroup>
+                            <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300 text-[10px] uppercase">
+                              <tr>
+                                <th className="py-2.5 px-2">Date</th>
+                                <th className="py-2.5 px-2">Doc #</th>
+                                <th className="py-2.5 px-2">Particulars / Description</th>
+                                <th className="py-2.5 px-1 text-center">Type</th>
+                                <th className="py-2.5 px-2 text-right">Debit (₹)</th>
+                                <th className="py-2.5 px-2 text-right">Credit (₹)</th>
+                                <th className="py-2.5 px-2.5 text-right">Balance (₹)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 text-slate-800">
+                              {/* Opening Balance Row if present */}
+                              {selectedCustomer.opening_balance !== 0 && (
+                                <tr className="bg-slate-50/70 italic text-[10px]">
+                                  <td className="py-2 px-2 font-mono text-slate-500">—</td>
+                                  <td className="py-2 px-2 font-mono text-slate-500 truncate">OB-001</td>
+                                  <td className="py-2 px-2 font-semibold text-slate-800 truncate">Opening Balance Brought Forward</td>
+                                  <td className="py-2 px-1 text-center">
+                                    <span className="px-1.5 py-0.5 rounded text-[8px] bg-slate-200 text-slate-700 font-bold font-mono">OP</span>
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-mono whitespace-nowrap">
+                                    {selectedCustomer.opening_balance > 0 ? formatCurrency(selectedCustomer.opening_balance) : "—"}
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-mono whitespace-nowrap">
+                                    {selectedCustomer.opening_balance < 0 ? formatCurrency(Math.abs(selectedCustomer.opening_balance)) : "—"}
+                                  </td>
+                                  <td className="py-2 px-2.5 text-right font-bold font-mono text-slate-900 whitespace-nowrap">
+                                    <span>{formatCurrency(Math.abs(selectedCustomer.opening_balance))}</span>
+                                    <span className={`ml-1 text-[9px] font-black ${selectedCustomer.opening_balance > 0 ? "text-rose-700" : "text-emerald-700"}`}>
+                                      {selectedCustomer.opening_balance > 0 ? "Dr" : "Cr"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              )}
+
+                              {ledgerEntries.length === 0 && selectedCustomer.opening_balance === 0 ? (
+                                <tr>
+                                  <td colSpan={7} className="py-6 text-center text-slate-400 font-medium">
+                                    No transactions recorded for this customer yet.
+                                  </td>
+                                </tr>
+                              ) : (
+                                ledgerEntries.map((e) => (
+                                  <tr key={e.id} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="py-2 px-2 font-mono text-slate-600 whitespace-nowrap text-[10px] truncate">
+                                      {e.date}
+                                    </td>
+                                    <td className="py-2 px-2 font-mono font-bold text-slate-900 whitespace-nowrap text-[10px] truncate" title={e.docNumber}>
+                                      {e.docNumber}
+                                    </td>
+                                    <td className="py-2 px-2 text-[10px] leading-tight">
+                                      <div className="font-semibold text-slate-900 break-words line-clamp-2">{e.particulars}</div>
+                                    </td>
+                                    <td className="py-2 px-1 text-center">
+                                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold inline-block ${
+                                        e.type === "BILL"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : e.type === "PAYMENT"
+                                          ? "bg-emerald-100 text-emerald-800"
+                                          : "bg-purple-100 text-purple-800"
+                                      }`}>
+                                        {e.category}
+                                      </span>
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono font-semibold text-slate-900 text-[10px] whitespace-nowrap">
+                                      {e.debit > 0 ? formatCurrency(e.debit) : "—"}
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono font-semibold text-emerald-700 text-[10px] whitespace-nowrap">
+                                      {e.credit > 0 ? formatCurrency(e.credit) : "—"}
+                                    </td>
+                                    <td className="py-2 px-2.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-[10px]">
+                                      <span>{formatCurrency(Math.abs(e.balance))}</span>
+                                      <span className={`ml-1 text-[9px] font-black ${e.balance > 0 ? "text-rose-700" : e.balance < 0 ? "text-emerald-700" : "text-slate-400"}`}>
+                                        {e.balance > 0 ? "Dr" : e.balance < 0 ? "Cr" : ""}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                            <tfoot className="bg-slate-100 border-t-2 border-slate-300 font-bold text-slate-900 text-[11px]">
+                              <tr>
+                                <td colSpan={4} className="py-2.5 px-2.5 text-right uppercase tracking-wider text-[10px]">
+                                  Period Total:
+                                </td>
+                                <td className="py-2.5 px-2 text-right font-mono font-black text-slate-950 whitespace-nowrap text-[10px]">
+                                  {formatCurrency(totalInvoiced)}
+                                </td>
+                                <td className="py-2.5 px-2 text-right font-mono font-black text-emerald-700 whitespace-nowrap text-[10px]">
+                                  {formatCurrency(totalReceived)}
+                                </td>
+                                <td className="py-2.5 px-2.5 text-right font-mono font-black whitespace-nowrap text-[10px]">
+                                  <span className={isOutstanding ? "text-rose-600" : "text-emerald-700"}>
+                                    {formatCurrency(Math.abs(netClosingBalance))}
+                                  </span>
+                                  <span className={`ml-1 text-[9px] font-black ${isOutstanding ? "text-rose-700" : "text-emerald-700"}`}>
+                                    {netClosingBalance > 0 ? "Dr" : netClosingBalance < 0 ? "Cr" : ""}
+                                  </span>
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+
+                        {/* 5. Terms & Signatures Box */}
+                        <div className="grid grid-cols-2 gap-6 pt-3 border-t border-slate-200">
+                          <div className="space-y-1 text-[9px] text-slate-500">
+                            <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                              Terms & Conditions:
+                            </div>
+                            <p>1. Please verify statement entries and report any discrepancy within 7 days.</p>
+                            <p>2. Overdue balances are subject to agreed commercial credit terms.</p>
+                            <p>3. This extract represents active reconciled entries in TPM Business ERP.</p>
+                            <div className="pt-4">
+                              <div className="border-t border-slate-300 w-44 pt-1 text-[9px] font-semibold text-slate-600">
+                                Customer Signature / Seal
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col justify-between items-end text-right">
+                            <div>
+                              <div className="font-black text-slate-900 text-[11px] uppercase">
+                                For The Pramod Maharaj Enterprises
+                              </div>
+                              <div className="text-[9px] text-slate-500 font-medium">
+                                Authorized Signatory / Accounts Desk
+                              </div>
+                            </div>
+                            <div className="border-t border-slate-300 w-44 pt-1 text-center">
+                              <span className="text-[9px] text-slate-400 font-medium">[ Signature & Stamp ]</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 6. System Footer */}
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[8px] text-slate-400 font-medium">
+                          <span>TPM Business ERP • System Verified Ledger Extract</span>
+                          <span>Computer Generated Document • Reconciled from live storage records</span>
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex flex-col justify-between sm:items-end text-left sm:text-right pt-2 sm:pt-0">
-                      <div>
-                        <div className="font-black text-slate-900 text-[11px] uppercase">
-                          For The Pramod Maharaj Enterprises
-                        </div>
-                        <div className="text-[9px] text-slate-500 font-medium">
-                          Authorized Signatory / Accounts Desk
-                        </div>
-                      </div>
-                      <div className="border-t border-slate-300 w-44 pt-1 text-center mt-4 sm:mt-0">
-                        <span className="text-[9px] text-slate-400 font-medium">[ Signature & Stamp ]</span>
-                      </div>
-                    </div>
                   </div>
-
-                  {/* 6. System Footer */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[8px] text-slate-400 font-medium">
-                    <span>TPM Business ERP • System Verified Ledger Extract</span>
-                    <span>Computer Generated Document • Reconciled from live storage records</span>
-                  </div>
-                </div>
-                </>
-              ) : (
+                ) : (
                 /* Dedicated Allocations & Outstanding Bills Management View (Requirement 1, 2, 3, 4, 11, 12) */
                 <div className="max-w-4xl w-full space-y-4 text-xs pb-6">
                   {/* Summary Metric Header */}
