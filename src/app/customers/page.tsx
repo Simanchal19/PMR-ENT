@@ -569,21 +569,23 @@ export default function CustomersPage() {
               {/* Modal Actions Bar (Top Toolbar) - Structured 2-Tier Header */}
               <div className="bg-slate-900 text-white shrink-0 no-print divide-y divide-slate-800">
                 {/* Top Tier: Customer Details & Close */}
-                <div className="px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                <div className="px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
                       TPM
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-bold text-sm text-white tracking-tight flex items-center gap-2 truncate">
-                        <span>Customer Account Ledger Statement</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-blue-300 font-mono font-normal shrink-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-bold text-xs sm:text-sm text-white tracking-tight truncate">
+                          Customer Account Ledger
+                        </h3>
+                        <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-blue-300 font-mono shrink-0">
                           {selectedCustomer.code || "CUST-0001"}
                         </span>
-                      </h3>
-                      <p className="text-[11px] text-slate-300 font-medium truncate">
+                      </div>
+                      <p className="text-[10px] sm:text-[11px] text-slate-300 font-medium truncate mt-0.5">
                         Party: <span className="font-bold text-white uppercase">{selectedCustomer.name}</span>
-                        {selectedCustomer.phone && <span className="text-slate-400 ml-2">({selectedCustomer.phone})</span>}
+                        {selectedCustomer.phone && <span className="text-slate-400 ml-1.5">({selectedCustomer.phone})</span>}
                       </p>
                     </div>
                   </div>
@@ -599,13 +601,13 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Bottom Tier: View Switcher (Left) & Actions (Right) */}
-                <div className="px-4 py-2 bg-slate-950/40 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="px-3 sm:px-4 py-2 bg-slate-950/40 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                   {/* View Tabs: Official Statement vs Bill Allocations */}
                   <div className="flex bg-slate-800 p-1 rounded-lg text-xs font-semibold border border-slate-700 shrink-0">
                     <button
                       type="button"
                       onClick={() => setLedgerTab("statement")}
-                      className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-md transition-all flex items-center justify-center gap-1.5 ${
                         ledgerTab === "statement" ? "bg-blue-600 text-white shadow-2xs" : "text-slate-300 hover:text-white"
                       }`}
                     >
@@ -615,7 +617,7 @@ export default function CustomersPage() {
                     <button
                       type="button"
                       onClick={() => setLedgerTab("allocations")}
-                      className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-md transition-all flex items-center justify-center gap-1.5 ${
                         ledgerTab === "allocations" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-300 hover:text-white"
                       }`}
                     >
@@ -631,15 +633,15 @@ export default function CustomersPage() {
 
                   {/* Action Buttons: Print, PDF, Excel */}
                   {ledgerTab === "statement" && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={handlePrint}
                         title="Print official statement on A4"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition-colors shadow-xs"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition-colors shadow-xs"
                       >
                         <Printer className="w-3.5 h-3.5 text-blue-300" />
-                        <span>Print Statement</span>
+                        <span>Print</span>
                       </button>
 
                       <button
@@ -647,21 +649,21 @@ export default function CustomersPage() {
                         onClick={handleDownloadPDF}
                         disabled={isGeneratingPDF}
                         title="Download statement as high-resolution PDF"
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 sm:px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
                       >
                         {isGeneratingPDF ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <Download className="w-3.5 h-3.5" />
                         )}
-                        <span>{isGeneratingPDF ? "Generating PDF..." : "Download as PDF"}</span>
+                        <span>{isGeneratingPDF ? "PDF..." : "Download PDF"}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handleExportExcel}
                         title="Export full ledger journal to Excel spreadsheet (.xlsx)"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors shadow-xs"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors shadow-xs"
                       >
                         <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
                         <span>Excel</span>
@@ -672,12 +674,12 @@ export default function CustomersPage() {
               </div>
 
               {/* Scrollable Document & Allocation Area */}
-              <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-200/60 flex flex-col items-center">
+              <div className="p-2.5 sm:p-6 overflow-y-auto overflow-x-hidden flex-1 bg-slate-200/60 flex flex-col">
                 {ledgerTab === "statement" ? (
                   <>
                     {/* Unallocated Payments Notice Banner on Statement view */}
                     {totalCustomerUnallocated > 0.005 && (
-                      <div className="mb-3 max-w-[740px] w-full p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs no-print">
+                      <div className="mb-3 max-w-4xl w-full mx-auto p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs no-print">
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                           <div className="text-xs">
@@ -706,23 +708,22 @@ export default function CustomersPage() {
                       </div>
                     )}
 
-                    {/* Document Sheet Container: Fixed 740px width matched 100% to A4 page */}
+                    {/* Document Sheet Container: Responsive container with full width and auto margins */}
                     <div
                       id="printable-ledger-doc"
-                      style={{ width: "740px", minWidth: "740px", maxWidth: "740px" }}
-                      className="bg-white text-slate-900 p-6 space-y-3.5 text-xs rounded-xl border border-slate-300 shadow-lg box-border font-sans"
+                      className="bg-white text-slate-900 p-4 sm:p-7 space-y-4 text-xs rounded-2xl border border-slate-300 shadow-lg max-w-4xl w-full mx-auto font-sans"
                     >
                   {/* 1. Official Header / Business Letterhead */}
-                  <div className="flex items-center justify-between pb-3 border-b-2 border-slate-900">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-slate-900">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-[#14243A] text-white font-black flex items-center justify-center text-base tracking-wider shrink-0 shadow-xs">
                         TPM
                       </div>
                       <div>
-                        <h1 className="text-xl font-black text-slate-950 tracking-tight uppercase leading-tight">
+                        <h1 className="text-lg sm:text-xl font-black text-slate-950 tracking-tight uppercase leading-tight">
                           {businessProfile.name}
                         </h1>
-                        <p className="text-[11px] text-blue-900 font-bold uppercase tracking-wider">
+                        <p className="text-[10px] sm:text-[11px] text-blue-900 font-bold uppercase tracking-wider">
                           Wholesale & Retail: Cement, TMT Steel Rods, Electricals & Hardware
                         </p>
                         <p className="text-[10px] text-slate-500 mt-0.5">
@@ -730,8 +731,8 @@ export default function CustomersPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="inline-block px-2.5 py-1 rounded bg-slate-100 border border-slate-300 font-mono font-bold text-slate-900 text-[11px] shadow-2xs">
+                    <div className="text-left sm:text-right shrink-0">
+                      <span className="inline-block px-2.5 py-1 rounded bg-slate-100 border border-slate-300 font-mono font-bold text-slate-900 text-[10px] sm:text-[11px] shadow-2xs">
                         GSTIN: {businessProfile.gstin}
                       </span>
                       <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
@@ -741,7 +742,7 @@ export default function CustomersPage() {
                   </div>
 
                   {/* 2. Statement Title Bar */}
-                  <div className="bg-[#14243A] text-white px-3.5 py-1.5 rounded-lg flex items-center justify-between shadow-xs">
+                  <div className="bg-[#14243A] text-white px-3.5 py-2 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-xs">
                     <div>
                       <h2 className="font-bold text-xs uppercase tracking-wider text-blue-200">
                         Statement of Account & Customer Running Ledger
@@ -750,14 +751,14 @@ export default function CustomersPage() {
                         Chronological journal of posted bills, payments, and credit notes
                       </p>
                     </div>
-                    <div className="text-right text-xs">
+                    <div className="text-left sm:text-right text-xs">
                       <span className="text-slate-400 text-[10px]">Statement Date: </span>
                       <span className="font-bold text-white text-[11px]">{formatDate(new Date().toISOString())}</span>
                     </div>
                   </div>
 
                   {/* 3. Customer Info & Summary Box */}
-                  <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
                     {/* Left: Customer Info */}
                     <div className="space-y-0.5">
                       <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
@@ -766,7 +767,7 @@ export default function CustomersPage() {
                       <div className="text-sm font-black text-slate-950 uppercase leading-tight">
                         {selectedCustomer.name}
                       </div>
-                      <div className="text-[11px] text-slate-600 flex items-center gap-2 pt-0.5">
+                      <div className="text-[11px] text-slate-600 flex items-center gap-2 pt-0.5 flex-wrap">
                         <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 text-[9px]">
                           {selectedCustomer.code || "CUST-0001"}
                         </span>
@@ -806,9 +807,9 @@ export default function CustomersPage() {
                     </div>
                   </div>
 
-                  {/* 4. Chronological Ledger Table with Fixed Column Widths */}
-                  <div className="border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
-                    <table className="w-full table-fixed text-left text-[11px] border-collapse">
+                  {/* 4. Chronological Ledger Table with Horizontal Scroll */}
+                  <div className="border border-slate-300 rounded-xl overflow-x-auto shadow-2xs">
+                    <table className="w-full min-w-[680px] table-fixed text-left text-[11px] border-collapse">
                       <colgroup>
                         <col style={{ width: "68px" }} />
                         <col style={{ width: "96px" }} />
@@ -924,7 +925,7 @@ export default function CustomersPage() {
                   </div>
 
                   {/* 5. Terms & Signatures Box */}
-                  <div className="grid grid-cols-2 gap-6 pt-3 border-t border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-3 border-t border-slate-200">
                     <div className="space-y-1 text-[9px] text-slate-500">
                       <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                         Terms & Conditions:
@@ -932,14 +933,14 @@ export default function CustomersPage() {
                       <p>1. Please verify statement entries and report any discrepancy within 7 days.</p>
                       <p>2. Overdue balances are subject to agreed commercial credit terms.</p>
                       <p>3. This extract represents active reconciled entries in TPM Business ERP.</p>
-                      <div className="pt-5">
+                      <div className="pt-3 sm:pt-5">
                         <div className="border-t border-slate-300 w-44 pt-1 text-[9px] font-semibold text-slate-600">
                           Customer Signature / Seal
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col justify-between items-end text-right">
+                    <div className="flex flex-col justify-between sm:items-end text-left sm:text-right pt-2 sm:pt-0">
                       <div>
                         <div className="font-black text-slate-900 text-[11px] uppercase">
                           For The Pramod Maharaj Enterprises
@@ -948,7 +949,7 @@ export default function CustomersPage() {
                           Authorized Signatory / Accounts Desk
                         </div>
                       </div>
-                      <div className="border-t border-slate-300 w-44 pt-1 text-center">
+                      <div className="border-t border-slate-300 w-44 pt-1 text-center mt-4 sm:mt-0">
                         <span className="text-[9px] text-slate-400 font-medium">[ Signature & Stamp ]</span>
                       </div>
                     </div>
