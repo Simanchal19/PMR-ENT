@@ -331,7 +331,7 @@ export default function CustomersPage() {
       await exportElementToPdf({
         elementId: "printable-ledger-doc",
         filename: `${safeName}_Ledger_Statement.pdf`,
-        widthPx: 760,
+        widthPx: 740,
         orientation: "portrait",
       });
     } catch (err) {
@@ -660,11 +660,10 @@ export default function CustomersPage() {
                         </div>
                       )}
 
-                      {/* Document Sheet Container: Fixed 760px A4 Portrait Width (Single Page) */}
+                      {/* Document Sheet Container: Print & PDF Optimized */}
                       <div
                         id="printable-ledger-doc"
-                        style={{ width: "760px", minWidth: "760px", maxWidth: "760px" }}
-                        className="bg-white text-slate-900 p-6 space-y-3.5 text-xs rounded-xl border border-slate-300 shadow-xl box-border font-sans shrink-0 my-1"
+                        className="bg-white text-slate-900 p-5 sm:p-6 space-y-3.5 text-xs rounded-xl border border-slate-300 shadow-xl box-border font-sans w-[740px] max-w-full shrink-0 my-1 mx-auto"
                       >
                         {/* 1. Official Header / Business Letterhead */}
                         <div className="flex items-center justify-between pb-3 border-b-2 border-slate-900">
@@ -760,17 +759,17 @@ export default function CustomersPage() {
                           </div>
                         </div>
 
-                        {/* 4. Chronological Ledger Table with Fixed Column Widths */}
+                        {/* 4. Chronological Ledger Table with Responsive Column Widths */}
                         <div className="border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
                           <table className="w-full table-fixed text-left text-[11px] border-collapse">
                             <colgroup>
-                              <col style={{ width: "70px" }} />
-                              <col style={{ width: "95px" }} />
-                              <col style={{ width: "210px" }} />
-                              <col style={{ width: "55px" }} />
-                              <col style={{ width: "85px" }} />
-                              <col style={{ width: "85px" }} />
-                              <col style={{ width: "110px" }} />
+                              <col style={{ width: "11%" }} />
+                              <col style={{ width: "14%" }} />
+                              <col style={{ width: "27%" }} />
+                              <col style={{ width: "8%" }} />
+                              <col style={{ width: "12%" }} />
+                              <col style={{ width: "12%" }} />
+                              <col style={{ width: "16%" }} />
                             </colgroup>
                             <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300 text-[10px] uppercase">
                               <tr>
