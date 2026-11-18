@@ -744,62 +744,133 @@ export default function CreateBillPage() {
             {category === "daily" && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                  <span>Electrical & Hardware Line Items (Manual Entry)</span>
+                  <span className="flex items-center gap-1.5">
+                    <span>Electrical & Hardware Line Items</span>
+                    <span className="text-[11px] font-normal text-slate-500 hidden sm:inline">
+                      ({dailyItems.length} {dailyItems.length === 1 ? "item" : "items"})
+                    </span>
+                  </span>
                   <button
                     type="button"
                     onClick={handleAddDailyItem}
-                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-semibold"
+                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-bold text-xs bg-blue-50 hover:bg-blue-100/80 px-2.5 py-1 rounded-lg transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Item</span>
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                {/* Desktop column header labels */}
+                <div className="hidden sm:flex items-center gap-3 px-3.5 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100/70 rounded-lg border border-slate-200/60">
+                  <div className="flex-1">Product Name / Item Description</div>
+                  <div className="w-24 text-center">Qty</div>
+                  <div className="w-28 text-right">Rate (₹)</div>
+                  <div className="w-28 text-right">Subtotal</div>
+                  {dailyItems.length > 1 && <div className="w-8 shrink-0"></div>}
+                </div>
+
+                <div className="space-y-3 sm:space-y-2">
                   {dailyItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 text-xs">
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          placeholder="Item Description (e.g. Anchor 16A Switch / 2.5mm Wire)"
-                          value={item.name}
-                          onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}
-                          className="w-full px-3 py-1.5 rounded border border-slate-200 bg-white"
-                        />
+                    <div
+                      key={idx}
+                      className="p-3 sm:p-2.5 rounded-xl border border-slate-200/90 bg-white sm:bg-slate-50/50 shadow-2xs hover:border-slate-300 transition-all space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:gap-3"
+                    >
+                      {/* Row 1 on mobile / Col 1 on desktop: Item Description */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="sm:hidden px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-bold text-slate-600 shrink-0">
+                          #{idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <input
+                            type="text"
+                            required
+                            placeholder="Product / Item Description (e.g. Anchor 16A Switch / 2.5mm Wire)"
+                            value={item.name}
+                            onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 sm:bg-white focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium placeholder:text-slate-400"
+                          />
+                        </div>
+                        {dailyItems.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDailyItem(idx)}
+                            title="Remove item"
+                            className="sm:hidden p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg shrink-0 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                      <div className="w-24">
-                        <input
-                          type="number"
-                          placeholder="Qty"
-                          min="1"
-                          value={item.qty}
-                          onChange={(e) => handleDailyItemChange(idx, "qty", e.target.value)}
-                          className="w-full px-3 py-1.5 rounded border border-slate-200 bg-white text-center"
-                        />
+
+                      {/* Row 2 on mobile / Cols 2-4 on desktop: Qty + Rate + Subtotal */}
+                      <div className="flex items-center justify-between gap-2.5 pt-2 sm:pt-0 border-t border-slate-100 sm:border-0">
+                        <div className="flex-1 sm:w-24 sm:flex-none">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase sm:hidden mb-1">
+                            Quantity
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            min="1"
+                            value={item.qty}
+                            onChange={(e) => handleDailyItemChange(idx, "qty", e.target.value)}
+                            className="w-full px-3 py-2 sm:py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div className="flex-1 sm:w-28 sm:flex-none">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase sm:hidden mb-1">
+                            Rate / Unit (₹)
+                          </label>
+                          <div className="relative">
+                            <span className="sm:hidden absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">₹</span>
+                            <input
+                              type="number"
+                              step="0.1"
+                              placeholder="Rate (₹)"
+                              value={item.rate}
+                              onChange={(e) => handleDailyItemChange(idx, "rate", e.target.value)}
+                              className="w-full pl-6 sm:pl-3 pr-3 py-2 sm:py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-right sm:w-28 sm:shrink-0 pl-1">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase sm:hidden mb-1">
+                            Line Total
+                          </span>
+                          <span className="font-bold text-xs text-slate-900 block font-mono">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
+
+                        {dailyItems.length > 1 && (
+                          <div className="hidden sm:flex w-8 justify-center shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDailyItem(idx)}
+                              title="Remove item"
+                              className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <div className="w-28">
-                        <input
-                          type="number"
-                          placeholder="Rate (₹)"
-                          value={item.rate}
-                          onChange={(e) => handleDailyItemChange(idx, "rate", e.target.value)}
-                          className="w-full px-3 py-1.5 rounded border border-slate-200 bg-white text-right"
-                        />
-                      </div>
-                      <div className="w-28 text-right font-bold text-slate-900 pr-2">
-                        {formatCurrency(item.amount)}
-                      </div>
-                      {dailyItems.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveDailyItem(idx)}
-                          className="text-slate-400 hover:text-rose-600"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   ))}
+                </div>
+
+                {/* Quick Add Another Line Item Button */}
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={handleAddDailyItem}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Another Product Item</span>
+                  </button>
                 </div>
               </div>
             )}
