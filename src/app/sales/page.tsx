@@ -229,6 +229,27 @@ export default function SalesPage() {
                 </tbody>
               </table>
 
+              {(Boolean(selectedBill.labour_amount) || Boolean(selectedBill.transport_amount)) && (
+                <div className="border-t border-slate-200/80 pt-2 space-y-1 text-xs font-sans text-slate-600">
+                  <div className="flex justify-between">
+                    <span>Goods Subtotal:</span>
+                    <span>{formatCurrency(selectedBill.subtotal || (selectedBill.total_amount - (selectedBill.labour_amount || 0) - (selectedBill.transport_amount || 0)))}</span>
+                  </div>
+                  {Boolean(selectedBill.labour_amount) && (
+                    <div className="flex justify-between">
+                      <span>Labour Cost / Loading:</span>
+                      <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_amount || 0)}</span>
+                    </div>
+                  )}
+                  {Boolean(selectedBill.transport_amount) && (
+                    <div className="flex justify-between">
+                      <span>Transport Cost / Delivery:</span>
+                      <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.transport_amount || 0)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="border-t border-slate-300 pt-2 flex justify-between text-sm font-bold text-slate-900 font-sans">
                 <span>TOTAL AMOUNT:</span>
                 <span className="text-blue-700">{formatCurrency(selectedBill.total_amount)}</span>

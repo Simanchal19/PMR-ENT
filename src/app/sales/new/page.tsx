@@ -25,7 +25,8 @@ import {
   Zap, 
   X, 
   ChevronDown,
-  Settings2
+  Settings2,
+  Truck
 } from "lucide-react";
 import Link from "next/link";
 import { CementBrandManagerModal, RodSizeManagerModal } from "@/components/admin/MasterCatalogModals";
@@ -64,6 +65,10 @@ export default function CreateBillPage() {
   const [dailyItems, setDailyItems] = useState([
     { name: "", qty: "" as any, rate: "" as any, amount: 0 }
   ]);
+
+  // Additional Charges: Labour & Transport Costs (Optional)
+  const [labourCost, setLabourCost] = useState("");
+  const [transportCost, setTransportCost] = useState("");
 
   useEffect(() => {
     const list = getCustomers();
@@ -148,7 +153,10 @@ export default function CreateBillPage() {
   const rodTotal = (parseFloat(rodKg) || 0) * (parseFloat(rodRate) || 0);
   const dailyTotal = dailyItems.reduce((acc, it) => acc + (it.amount || 0), 0);
 
-  const currentTotal = category === "cement" ? cementTotal : category === "rod" ? rodTotal : dailyTotal;
+  const goodsSubtotal = category === "cement" ? cementTotal : category === "rod" ? rodTotal : dailyTotal;
+  const labourVal = parseFloat(labourCost) || 0;
+  const transportVal = parseFloat(transportCost) || 0;
+  const currentTotal = goodsSubtotal + labourVal + transportVal;
 
   // Dynamic party search: if user types "S", all names starting with "S" appear first, then names containing "S"
   const matchingCustomers = useMemo(() => {
@@ -242,6 +250,8 @@ export default function CreateBillPage() {
     setRodKg("");
     setRodRate("");
     setDailyItems([{ name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+    setLabourCost("");
+    setTransportCost("");
     setNotes("");
     setSuccessBill(null);
   };
@@ -255,7 +265,7 @@ export default function CreateBillPage() {
     const cust = customers.find(c => c.id === selectedCustomerId);
     if (!cust) return;
 
-    if (currentTotal <= 0) {
+    if (goodsSubtotal <= 0 && currentTotal <= 0) {
       alert("Invoice total must be greater than zero. Please enter valid quantity and rate.");
       return;
     }
@@ -325,13 +335,43 @@ export default function CreateBillPage() {
       };
     }
 
+    // Add Labour Charges item if entered
+    if (labourVal > 0) {
+      items.push({
+        id: `item-${Date.now()}-labour`,
+        bill_id: "",
+        item_name: "Labour / Loading Charges",
+        item_category: category,
+        quantity: 1,
+        unit: "SERVICE",
+        unit_price: labourVal,
+        total_amount: labourVal
+      });
+    }
+
+    // Add Transport Charges item if entered
+    if (transportVal > 0) {
+      items.push({
+        id: `item-${Date.now()}-transport`,
+        bill_id: "",
+        item_name: "Transport / Delivery Charges",
+        item_category: category,
+        quantity: 1,
+        unit: "SERVICE",
+        unit_price: transportVal,
+        total_amount: transportVal
+      });
+    }
+
     const created = createBill({
       bill_number: billNumber,
       bill_category: category,
       bill_date: billDate,
       customer_id: cust.id,
       customer_name: cust.name,
-      subtotal: currentTotal,
+      subtotal: goodsSubtotal,
+      labour_amount: labourVal,
+      transport_amount: transportVal,
       discount_amount: 0,
       tax_amount: 0,
       total_amount: currentTotal,
@@ -377,6 +417,17 @@ export default function CreateBillPage() {
           <p className="text-xs text-slate-600 max-w-md mx-auto">
             Total amount of {formatCurrency(successBill.total_amount)} has been billed to {successBill.customer_name} and updated in their customer ledger.
           </p>
+          {(successBill.labour_amount || successBill.transport_amount) ? (
+            <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 font-medium pt-1">
+              <span>Goods: <strong className="text-slate-800">{formatCurrency(successBill.subtotal)}</strong></span>
+              {successBill.labour_amount ? (
+                <span>• Labour: <strong className="text-slate-800">+{formatCurrency(successBill.labour_amount)}</strong></span>
+              ) : null}
+              {successBill.transport_amount ? (
+                <span>• Transport: <strong className="text-slate-800">+{formatCurrency(successBill.transport_amount)}</strong></span>
+              ) : null}
+            </div>
+          ) : null}
           <div className="pt-4 flex justify-center gap-3">
             <button
               onClick={handleResetForm}
@@ -875,6 +926,69 @@ export default function CreateBillPage() {
               </div>
             )}
 
+            {/* Additional Charges: Labour & Transport Costs */}
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Truck className="w-4 h-4 text-blue-600" />
+                  <span>Labour & Transport Charges (Optional)</span>
+                </label>
+                <span className="text-[11px] text-slate-500 hidden sm:inline font-medium">
+                  Added to bill total and charged to customer
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Labour Cost */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Labour Cost / Loading (₹)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      placeholder="0.00"
+                      value={labourCost}
+                      onChange={(e) => setLabourCost(e.target.value)}
+                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    Hamali, loading, or unloading charges
+                  </span>
+                </div>
+
+                {/* Transport Cost */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Transport Cost / Delivery (₹)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      placeholder="0.00"
+                      value={transportCost}
+                      onChange={(e) => setTransportCost(e.target.value)}
+                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    Vehicle, freight, tractor or auto delivery charges
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Total Display & Actions */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -882,11 +996,26 @@ export default function CreateBillPage() {
                 <div className="text-2xl font-black text-blue-700">
                   {formatCurrency(currentTotal)}
                 </div>
-                {!selectedCustomerId && (
-                  <span className="text-[11px] text-amber-600 font-medium">⚠️ Select customer to enable posting</span>
+                {(labourVal > 0 || transportVal > 0) && (
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                    <span>Goods: <strong className="text-slate-800">{formatCurrency(goodsSubtotal)}</strong></span>
+                    {labourVal > 0 && (
+                      <span>• Labour: <strong className="text-slate-800">+{formatCurrency(labourVal)}</strong></span>
+                    )}
+                    {transportVal > 0 && (
+                      <span>• Transport: <strong className="text-slate-800">+{formatCurrency(transportVal)}</strong></span>
+                    )}
+                  </div>
                 )}
-                {selectedCustomerId && currentTotal <= 0 && (
-                  <span className="text-[11px] text-slate-500">Enter quantity & unit rate to calculate total</span>
+                {!selectedCustomerId && (
+                  <span className="text-[11px] text-amber-600 font-medium block mt-0.5">
+                    ⚠️ Select customer to enable posting
+                  </span>
+                )}
+                {selectedCustomerId && goodsSubtotal <= 0 && (
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    Enter quantity & unit rate to calculate total
+                  </span>
                 )}
               </div>
 
@@ -899,7 +1028,7 @@ export default function CreateBillPage() {
                 </Link>
                 <button
                   type="submit"
-                  disabled={!selectedCustomerId || currentTotal <= 0}
+                  disabled={!selectedCustomerId || currentTotal <= 0 || goodsSubtotal <= 0}
                   className="flex items-center gap-1.5 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
                 >
                   <Save className="w-4 h-4" />

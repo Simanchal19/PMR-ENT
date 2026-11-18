@@ -179,6 +179,13 @@ export default function CustomersPage() {
         }
       }
 
+      if (b.labour_amount || b.transport_amount) {
+        const addOns: string[] = [];
+        if (b.labour_amount) addOns.push(`Labour: ${formatCurrency(b.labour_amount)}`);
+        if (b.transport_amount) addOns.push(`Transport: ${formatCurrency(b.transport_amount)}`);
+        particulars += ` [${addOns.join(", ")}]`;
+      }
+
       list.push({
         id: b.id,
         date: b.bill_date ? formatDate(b.bill_date) : formatDate(b.created_at),

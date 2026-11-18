@@ -87,6 +87,8 @@ export interface Bill {
   customer_id: string;
   customer_name: string;
   subtotal: number;
+  labour_amount?: number;
+  transport_amount?: number;
   discount_amount: number;
   tax_amount: number;
   total_amount: number;
