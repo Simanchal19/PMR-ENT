@@ -8,21 +8,20 @@
 
 export type PeriodPreset =
   | "today"
-  | "yesterday"
-  | "this_week"
   | "this_month"
   | "previous_month"
-  | "oct_2026"
+  | "fy"
   | "all"
-  | "custom";
+  | "custom"
+  | "yesterday"
+  | "this_week"
+  | "oct_2026";
 
 export const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
   { value: "today", label: "Today" },
-  { value: "yesterday", label: "Yesterday" },
-  { value: "this_week", label: "This Week" },
   { value: "this_month", label: "This Month" },
   { value: "previous_month", label: "Previous Month" },
-  { value: "oct_2026", label: "OCT 2026 (Historical)" },
+  { value: "fy", label: "Financial Year (FY 2026-27)" },
   { value: "all", label: "All Records" },
   { value: "custom", label: "Custom Date Range" },
 ];
@@ -98,6 +97,15 @@ export function resolvePeriod(
       start = toYMD(new Date(today.getFullYear(), today.getMonth() - 1, 1));
       end = toYMD(new Date(today.getFullYear(), today.getMonth(), 0));
       break;
+    case "fy": {
+      const year = today.getFullYear();
+      const month = today.getMonth(); // 0 = Jan, 3 = Apr
+      const fyStartYear = month >= 3 ? year : year - 1;
+      start = `${fyStartYear}-04-01`;
+      end = `${fyStartYear + 1}-03-31`;
+      name = `FY ${fyStartYear}-${String(fyStartYear + 1).slice(2)}`;
+      break;
+    }
     case "oct_2026":
       start = "2026-10-01";
       end = "2026-10-31";
