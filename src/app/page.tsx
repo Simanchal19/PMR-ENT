@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [stockSummary, setStockSummary] = useState<{
     totalCementBagsAvailable: number;
     totalRodKgAvailable: number;
+    totalHardwareUnitsAvailable?: number;
     totalInventoryValue: number;
   } | null>(null);
   const [recentBills, setRecentBills] = useState<Bill[]>([]);
@@ -601,7 +602,7 @@ export default function DashboardPage() {
               </span>
             </div>
             <span className="text-[10px] sm:text-[11px] text-amber-800 font-semibold mt-1 block truncate">
-              {stockSummary?.totalCementBagsAvailable || 0} Bags • {stockSummary?.totalRodKgAvailable || 0} Kg →
+              {stockSummary?.totalCementBagsAvailable || 0} Bags • {stockSummary?.totalRodKgAvailable || 0} Kg{stockSummary?.totalHardwareUnitsAvailable ? ` • ${stockSummary.totalHardwareUnitsAvailable} Units` : ""} →
             </span>
           </Link>
         </div>

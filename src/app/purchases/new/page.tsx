@@ -9,6 +9,7 @@ import {
   getCementBrands,
   getRodSizes,
   getPaymentModes,
+  getHardwareItems,
   calculateInventoryStock,
   getStoredUserRole,
 } from "@/lib/storage";
@@ -18,6 +19,7 @@ import {
   PurchaseBill,
   CementBrand,
   RodSize,
+  HardwareItem,
   PaymentMode,
   PaymentModeOption,
   StockItemSummary,
@@ -102,6 +104,7 @@ export default function CreatePurchaseBillPage() {
   // Master Catalogs & Stock
   const [cementBrands, setCementBrands] = useState<CementBrand[]>([]);
   const [rodSizes, setRodSizes] = useState<RodSize[]>([]);
+  const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
   const [paymentModes, setPaymentModes] = useState<PaymentModeOption[]>([]);
   const [cementStockMap, setCementStockMap] = useState<Record<string, StockItemSummary>>({});
   const [rodStockMap, setRodStockMap] = useState<Record<string, StockItemSummary>>({});
@@ -126,9 +129,11 @@ export default function CreatePurchaseBillPage() {
     setSuppliers(getSuppliers());
     const bList = getCementBrands();
     const sList = getRodSizes();
+    const hList = getHardwareItems();
     const pModes = getPaymentModes();
     setCementBrands(bList);
     setRodSizes(sList);
+    setHardwareItems(hList);
     setPaymentModes(pModes);
 
     const stock = calculateInventoryStock();
@@ -265,6 +270,18 @@ export default function CreatePurchaseBillPage() {
   const handleDailyItemChange = (index: number, field: string, val: any) => {
     const updated = [...dailyItems];
     updated[index] = { ...updated[index], [field]: val };
+    if (field === "name") {
+      const match = hardwareItems.find((h) => h.name.toLowerCase() === String(val).toLowerCase());
+      if (match && (!updated[index].rate || updated[index].rate === "0")) {
+        const suggestedRate = Math.round((match.defaultRate || 0) * 0.82);
+        if (suggestedRate > 0) {
+          updated[index].rate = suggestedRate as any;
+          if (!updated[index].qty) updated[index].qty = "1" as any;
+          const q = parseFloat(updated[index].qty) || 1;
+          updated[index].amount = q * suggestedRate;
+        }
+      }
+    }
     if (field === "qty" || field === "rate") {
       const q = parseFloat(field === "qty" ? val : updated[index].qty) || 0;
       const r = parseFloat(field === "rate" ? val : updated[index].rate) || 0;
@@ -998,6 +1015,14 @@ export default function CreatePurchaseBillPage() {
 
             {category === "daily" && (
               <div className="space-y-3">
+                <datalist id="purchase-hardware-catalog">
+                  {hardwareItems.map((h) => (
+                    <option key={h.id} value={h.name}>
+                      {h.name} ({h.unit})
+                    </option>
+                  ))}
+                </datalist>
+
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                   <span className="flex items-center gap-1.5">
                     <span>Electrical & Hardware Wholesale Items</span>
@@ -1039,6 +1064,7 @@ export default function CreatePurchaseBillPage() {
                           <input
                             type="text"
                             required
+                            list="purchase-hardware-catalog"
                             placeholder="Product / Item Name (e.g. Polycab 2.5mm Wire, Havells MCB)"
                             value={item.name}
                             onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}

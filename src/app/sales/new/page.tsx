@@ -9,9 +9,10 @@ import {
   createCustomer,
   getCementBrands,
   getRodSizes,
+  getHardwareItems,
   getStoredUserRole
 } from "@/lib/storage";
-import { Customer, BillCategory, Bill, CementBrand, RodSize } from "@/lib/types";
+import { Customer, BillCategory, Bill, CementBrand, RodSize, HardwareItem } from "@/lib/types";
 import { formatCurrency, getTodayDateString, generateBillNumber } from "@/lib/utils";
 import { getClientSession } from "@/lib/auth";
 import { 
@@ -60,6 +61,7 @@ export default function CreateBillPage() {
   // Dynamic Master Catalogs (Admin Configurable)
   const [cementBrands, setCementBrands] = useState<CementBrand[]>([]);
   const [rodSizes, setRodSizes] = useState<RodSize[]>([]);
+  const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCementModal, setShowCementModal] = useState(false);
   const [showRodModal, setShowRodModal] = useState(false);
@@ -87,8 +89,10 @@ export default function CreateBillPage() {
     const loadCatalogs = () => {
       const bList = getCementBrands();
       const sList = getRodSizes();
+      const hList = getHardwareItems();
       setCementBrands(bList);
       setRodSizes(sList);
+      setHardwareItems(hList);
 
       const activeB = bList.filter(b => b.isActive);
       if (activeB.length > 0 && !activeB.some(b => b.name === cementType)) {
@@ -262,6 +266,20 @@ export default function CreateBillPage() {
   const handleDailyItemChange = (index: number, field: string, value: any) => {
     const updated = [...dailyItems];
     (updated[index] as any)[field] = value;
+    if (field === "name") {
+      const match = hardwareItems.find(
+        (h) => h.name.toLowerCase() === String(value).toLowerCase()
+      );
+      if (match && (!updated[index].rate || updated[index].rate === "0")) {
+        const defaultRate = match.defaultRate || 0;
+        if (defaultRate > 0) {
+          updated[index].rate = defaultRate as any;
+          if (!updated[index].qty) updated[index].qty = "1" as any;
+          const q = parseFloat(updated[index].qty as any) || 1;
+          updated[index].amount = q * defaultRate;
+        }
+      }
+    }
     if (field === "qty" || field === "rate") {
       const q = parseFloat(updated[index].qty as any) || 0;
       const r = parseFloat(updated[index].rate as any) || 0;
@@ -840,6 +858,14 @@ export default function CreateBillPage() {
 
             {category === "daily" && (
               <div className="space-y-3">
+                <datalist id="sales-hardware-catalog">
+                  {hardwareItems.map((h) => (
+                    <option key={h.id} value={h.name}>
+                      {h.name} ({h.unit} • ₹{h.defaultRate})
+                    </option>
+                  ))}
+                </datalist>
+
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                   <span className="flex items-center gap-1.5">
                     <span>Electrical & Hardware Line Items</span>
@@ -881,6 +907,7 @@ export default function CreateBillPage() {
                           <input
                             type="text"
                             required
+                            list="sales-hardware-catalog"
                             placeholder="Product / Item Description (e.g. Anchor 16A Switch / 2.5mm Wire)"
                             value={item.name}
                             onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}

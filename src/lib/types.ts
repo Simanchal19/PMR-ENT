@@ -231,6 +231,17 @@ export interface RodSize {
   updatedAt?: string;
 }
 
+export interface HardwareItem {
+  id: string;
+  name: string;
+  unit: string;
+  defaultRate: number;
+  openingStock?: number;
+  isActive: boolean;
+  notes?: string;
+  updatedAt?: string;
+}
+
 export interface PaymentModeOption {
   id: string;
   code: string;
@@ -354,9 +365,9 @@ export interface PurchaseReturn {
 
 export interface StockItemSummary {
   id: string;
-  category: 'cement' | 'rod';
-  name: string; // Brand name (e.g. LNT) or Rod size (e.g. 12mm)
-  unit: 'Bags' | 'Kg';
+  category: 'cement' | 'rod' | 'daily';
+  name: string; // Brand name (e.g. LNT), Rod size (e.g. 12mm), or Hardware item name
+  unit: string; // 'Bags' | 'Kg' | 'Pcs' | 'Coils' | 'Mtrs' | 'Box' | 'Unit' | 'Nos'
   opening_stock: number;
   purchased_qty: number;
   purchase_return_qty: number;

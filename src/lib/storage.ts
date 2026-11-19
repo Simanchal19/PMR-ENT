@@ -12,6 +12,7 @@ import {
   AuditLog,
   CementBrand,
   RodSize,
+  HardwareItem,
   PaymentModeOption,
   ExpenseCategoryOption,
   BusinessProfile,
@@ -35,6 +36,7 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: "tpm_audit_logs_v1",
   CEMENT_BRANDS: "tpm_cement_brands_v1",
   ROD_SIZES: "tpm_rod_sizes_v1",
+  HARDWARE_ITEMS: "tpm_hardware_items_v1",
   PAYMENT_MODES: "tpm_payment_modes_v1",
   EXPENSE_CATEGORIES: "tpm_expense_categories_v1",
   BUSINESS_PROFILE: "tpm_business_profile_v1",
@@ -1184,6 +1186,17 @@ export const INITIAL_ROD_SIZES: RodSize[] = [
   { id: "rs-7", size: "Binding Wire", defaultRate: 75.0, isActive: true, notes: "GI / Annealed Wire" },
 ];
 
+export const INITIAL_HARDWARE_ITEMS: HardwareItem[] = [
+  { id: "hw-1", name: "Polycab 2.5mm Wire 90m Coil", unit: "Coils", defaultRate: 2450, openingStock: 25, isActive: true, notes: "FR Flame Retardant 90m" },
+  { id: "hw-2", name: "Finolex 1.5mm Wire 90m Coil", unit: "Coils", defaultRate: 1650, openingStock: 30, isActive: true, notes: "FR Multi-strand PVC" },
+  { id: "hw-3", name: "Anchor 16A One-Way Switch", unit: "Pcs", defaultRate: 45, openingStock: 120, isActive: true, notes: "Modular Switch" },
+  { id: "hw-4", name: "Anchor 6A One-Way Switch", unit: "Pcs", defaultRate: 28, openingStock: 150, isActive: true, notes: "Modular Switch" },
+  { id: "hw-5", name: "Havells 16A Single Pole MCB", unit: "Pcs", defaultRate: 185, openingStock: 40, isActive: true, notes: "C-Curve Miniature Circuit Breaker" },
+  { id: "hw-6", name: "Anchor Roma Modular 6M Plate", unit: "Pcs", defaultRate: 95, openingStock: 50, isActive: true, notes: "6 Module Cover Plate" },
+  { id: "hw-7", name: "PVC Conduit Pipe 25mm (3m)", unit: "Pcs", defaultRate: 85, openingStock: 80, isActive: true, notes: "Heavy Duty Electrical Pipe" },
+  { id: "hw-8", name: "Cello Tape / PVC Insulation Tape", unit: "Pcs", defaultRate: 15, openingStock: 200, isActive: true, notes: "Electrical Joint Tape" },
+];
+
 export const INITIAL_PAYMENT_MODES: PaymentModeOption[] = [
   { id: "pm-1", code: "CASH", label: "Cash Payment", isActive: true, isSystem: true },
   { id: "pm-2", code: "UPI", label: "UPI (PhonePe / GooglePay / QR)", isActive: true, isSystem: true },
@@ -1451,6 +1464,134 @@ export function deleteRodSize(
     entity: `Rod Size: ${deleted.size}`,
     actor: actor || "System Administrator (Admin Account)",
     notes: `Permanently removed rod size "${deleted.size}" from catalog.`,
+  });
+
+  return { success: true };
+}
+
+/* ---------------- HARDWARE / ELECTRICAL ITEMS CRUD ---------------- */
+
+export function getHardwareItems(): HardwareItem[] {
+  if (!isClient()) return INITIAL_HARDWARE_ITEMS;
+  const raw = localStorage.getItem(STORAGE_KEYS.HARDWARE_ITEMS);
+  if (!raw) {
+    localStorage.setItem(STORAGE_KEYS.HARDWARE_ITEMS, JSON.stringify(INITIAL_HARDWARE_ITEMS));
+    return INITIAL_HARDWARE_ITEMS;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_HARDWARE_ITEMS;
+  } catch {
+    return INITIAL_HARDWARE_ITEMS;
+  }
+}
+
+export function saveHardwareItems(items: HardwareItem[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.HARDWARE_ITEMS, JSON.stringify(items));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+  }
+}
+
+export function addHardwareItem(
+  data: { name: string; unit?: string; defaultRate?: number; openingStock?: number; notes?: string },
+  actor?: string
+): { success: boolean; item?: HardwareItem; error?: string } {
+  const name = (data.name || "").trim();
+  if (!name) {
+    return { success: false, error: "Hardware item name is required." };
+  }
+
+  const items = getHardwareItems();
+  if (items.some(i => i.name.toLowerCase() === name.toLowerCase())) {
+    return { success: false, error: `Hardware item "${name}" already exists.` };
+  }
+
+  const newItem: HardwareItem = {
+    id: `hw-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    name,
+    unit: data.unit?.trim() || "Pcs",
+    defaultRate: Number(data.defaultRate) || 0,
+    openingStock: Number(data.openingStock) || 0,
+    isActive: true,
+    notes: data.notes?.trim() || "",
+    updatedAt: new Date().toISOString(),
+  };
+
+  items.push(newItem);
+  saveHardwareItems(items);
+
+  addAuditLog({
+    action: "ADD_HARDWARE_ITEM",
+    entity: `Hardware Item: ${name}`,
+    actor: actor || "System Administrator (Admin Account)",
+    notes: `Added electrical & hardware item "${name}" (${newItem.unit}) with default rate ₹${newItem.defaultRate}${newItem.openingStock ? ` and opening stock ${newItem.openingStock} ${newItem.unit}` : ""}.`,
+  });
+
+  return { success: true, item: newItem };
+}
+
+export function updateHardwareItem(
+  id: string,
+  updates: Partial<Pick<HardwareItem, "name" | "unit" | "defaultRate" | "openingStock" | "isActive" | "notes">>,
+  actor?: string
+): { success: boolean; item?: HardwareItem; error?: string } {
+  const items = getHardwareItems();
+  const idx = items.findIndex(i => i.id === id);
+  if (idx === -1) {
+    return { success: false, error: "Hardware item not found." };
+  }
+
+  const old = items[idx];
+  const newName = updates.name ? updates.name.trim() : old.name;
+
+  if (updates.name && newName.toLowerCase() !== old.name.toLowerCase() && items.some(i => i.id !== id && i.name.toLowerCase() === newName.toLowerCase())) {
+    return { success: false, error: `Another hardware item named "${newName}" already exists.` };
+  }
+
+  const updated: HardwareItem = {
+    ...old,
+    name: newName,
+    unit: updates.unit !== undefined ? updates.unit.trim() : old.unit,
+    defaultRate: updates.defaultRate !== undefined ? Number(updates.defaultRate) : old.defaultRate,
+    openingStock: updates.openingStock !== undefined ? Number(updates.openingStock) : (old.openingStock || 0),
+    isActive: updates.isActive !== undefined ? updates.isActive : old.isActive,
+    notes: updates.notes !== undefined ? updates.notes.trim() : old.notes,
+    updatedAt: new Date().toISOString(),
+  };
+
+  items[idx] = updated;
+  saveHardwareItems(items);
+
+  addAuditLog({
+    action: "UPDATE_HARDWARE_ITEM",
+    entity: `Hardware Item: ${updated.name}`,
+    actor: actor || "System Administrator (Admin Account)",
+    notes: `Updated item "${old.name}". Rate: ₹${updated.defaultRate}, Opening Stock: ${updated.openingStock || 0} ${updated.unit}, Status: ${updated.isActive ? "Active" : "Inactive"}.`,
+  });
+
+  return { success: true, item: updated };
+}
+
+export function deleteHardwareItem(
+  id: string,
+  actor?: string
+): { success: boolean; error?: string } {
+  const items = getHardwareItems();
+  const idx = items.findIndex(i => i.id === id);
+  if (idx === -1) {
+    return { success: false, error: "Hardware item not found." };
+  }
+
+  const deleted = items[idx];
+  items.splice(idx, 1);
+  saveHardwareItems(items);
+
+  addAuditLog({
+    action: "REMOVE_HARDWARE_ITEM",
+    entity: `Hardware Item: ${deleted.name}`,
+    actor: actor || "System Administrator (Admin Account)",
+    notes: `Permanently removed hardware item "${deleted.name}" from catalog.`,
   });
 
   return { success: true };
@@ -2647,18 +2788,21 @@ export function calculatePurchaseMetrics(range?: DateRange): PurchaseSummaryMetr
 }
 
 /**
- * Real-Time Inventory & Godown Stock Calculation across all Cement Brands (Bags) and TMT Rod Sizes (Kg)
+ * Real-Time Inventory & Godown Stock Calculation across Cement Brands (Bags), TMT Rod Sizes (Kg), and Electrical & Hardware (Units/Pcs/Coils)
  */
 export function calculateInventoryStock(): {
   cementStock: StockItemSummary[];
   rodStock: StockItemSummary[];
+  hardwareStock: StockItemSummary[];
   totalCementBagsAvailable: number;
   totalRodKgAvailable: number;
+  totalHardwareUnitsAvailable: number;
   totalInventoryValue: number;
   lowStockCount: number;
 } {
   const cementBrands = getCementBrands();
   const rodSizes = getRodSizes();
+  const hardwareItems = getHardwareItems();
 
   const pBills = getPurchaseBills().filter(b => b.status === "posted");
   const pReturns = getPurchaseReturns().filter(r => r.status === "approved");
@@ -2768,21 +2912,164 @@ export function calculateInventoryStock(): {
     };
   });
 
+  // 3. Electrical & Hardware Stock
+  const matchesHardwareName = (billItemName: string, catalogItemName: string): boolean => {
+    const b = (billItemName || "").trim().toLowerCase();
+    const c = (catalogItemName || "").trim().toLowerCase();
+    if (!b || !c) return false;
+    if (b === c) return true;
+    if (b.replace(/\s+/g, " ") === c.replace(/\s+/g, " ")) return true;
+    if (b.includes(c) || c.includes(b)) {
+      const bTokens: string[] = b.match(/\b\d+(\.\d+)?[a-z]*\b/g) || [];
+      const cTokens: string[] = c.match(/\b\d+(\.\d+)?[a-z]*\b/g) || [];
+      const hasConflict = bTokens.some(bt =>
+        cTokens.length > 0 && !cTokens.includes(bt) && cTokens.some(ct => ct.replace(/^\d+/, "") === bt.replace(/^\d+/, ""))
+      );
+      if (!hasConflict) return true;
+    }
+    return false;
+  };
+
+  const configuredStock: StockItemSummary[] = hardwareItems.map(hw => {
+    const opening = Number(hw.openingStock) || 0;
+
+    let purchasedQty = 0;
+    let purchasedValue = 0;
+    for (const b of pBills) {
+      if (b.items && b.items.length > 0) {
+        for (const it of b.items) {
+          if (matchesHardwareName(it.item_name, hw.name)) {
+            const qty = Number(it.quantity) || 0;
+            purchasedQty += qty;
+            purchasedValue += Number(it.total_amount) || (qty * (Number(it.unit_price) || 0));
+          }
+        }
+      }
+    }
+
+    const purchaseReturnQty = pReturns
+      .filter(r => r.item_type === "ELECTRIC" && (
+        matchesHardwareName(r.brand_or_size || "", hw.name) ||
+        matchesHardwareName(r.reason || "", hw.name)
+      ))
+      .reduce((s, r) => s + (r.qty || 0), 0);
+
+    let soldQty = 0;
+    for (const b of sBills) {
+      if (b.items && b.items.length > 0) {
+        for (const it of b.items) {
+          if (matchesHardwareName(it.item_name, hw.name)) {
+            soldQty += Number(it.quantity) || 0;
+          }
+        }
+      }
+    }
+
+    const salesReturnQty = sReturns
+      .filter(r => r.item_type === "ELECTRIC" && matchesHardwareName(r.reason || "", hw.name))
+      .reduce((s, r) => {
+        const rate = hw.defaultRate || 100;
+        return s + (r.amount ? Math.round(r.amount / rate) : 0);
+      }, 0);
+
+    const available = opening + purchasedQty - purchaseReturnQty - soldQty + salesReturnQty;
+    const avgPurchaseRate =
+      purchasedQty > 0
+        ? purchasedValue / purchasedQty
+        : Number(((hw.defaultRate || 100) * 0.8).toFixed(2));
+
+    const stockValue = Math.max(0, available) * avgPurchaseRate;
+
+    return {
+      id: hw.id,
+      category: "daily",
+      name: hw.name,
+      unit: hw.unit || "Pcs",
+      opening_stock: opening,
+      purchased_qty: Number(purchasedQty.toFixed(2)),
+      purchase_return_qty: Number(purchaseReturnQty.toFixed(2)),
+      sold_qty: Number(soldQty.toFixed(2)),
+      sales_return_qty: Number(salesReturnQty.toFixed(2)),
+      available_stock: Number(available.toFixed(2)),
+      avg_purchase_rate: Number(avgPurchaseRate.toFixed(2)),
+      default_selling_rate: hw.defaultRate || 0,
+      stock_value: Number(stockValue.toFixed(2)),
+    };
+  });
+
+  // Check for any uncataloged electrical items in posted bills
+  const uncatalogedMap = new Map<string, { purchasedQty: number; purchasedValue: number; soldQty: number }>();
+  for (const b of pBills) {
+    if (b.bill_category === "daily" && b.items) {
+      for (const it of b.items) {
+        const name = (it.item_name || "").trim();
+        if (name && !hardwareItems.some(h => matchesHardwareName(name, h.name))) {
+          const prev = uncatalogedMap.get(name) || { purchasedQty: 0, purchasedValue: 0, soldQty: 0 };
+          const qty = Number(it.quantity) || 0;
+          prev.purchasedQty += qty;
+          prev.purchasedValue += Number(it.total_amount) || (qty * (Number(it.unit_price) || 0));
+          uncatalogedMap.set(name, prev);
+        }
+      }
+    }
+  }
+  for (const b of sBills) {
+    if (b.bill_category === "daily" && b.items) {
+      for (const it of b.items) {
+        const name = (it.item_name || "").trim();
+        if (name && !hardwareItems.some(h => matchesHardwareName(name, h.name))) {
+          const prev = uncatalogedMap.get(name) || { purchasedQty: 0, purchasedValue: 0, soldQty: 0 };
+          prev.soldQty += Number(it.quantity) || 0;
+          uncatalogedMap.set(name, prev);
+        }
+      }
+    }
+  }
+
+  const uncatalogedStock: StockItemSummary[] = Array.from(uncatalogedMap.entries()).map(([name, data], idx) => {
+    const available = data.purchasedQty - data.soldQty;
+    const avgPurchaseRate = data.purchasedQty > 0 ? data.purchasedValue / data.purchasedQty : 0;
+    const stockValue = Math.max(0, available) * avgPurchaseRate;
+    return {
+      id: `hw-uncataloged-${idx}`,
+      category: "daily",
+      name,
+      unit: "Pcs",
+      opening_stock: 0,
+      purchased_qty: Number(data.purchasedQty.toFixed(2)),
+      purchase_return_qty: 0,
+      sold_qty: Number(data.soldQty.toFixed(2)),
+      sales_return_qty: 0,
+      available_stock: Number(available.toFixed(2)),
+      avg_purchase_rate: Number(avgPurchaseRate.toFixed(2)),
+      default_selling_rate: Number((avgPurchaseRate * 1.25).toFixed(2)),
+      stock_value: Number(stockValue.toFixed(2)),
+    };
+  });
+
+  const hardwareStock = [...configuredStock, ...uncatalogedStock];
+
   const totalCementBagsAvailable = cementStock.reduce((s, i) => s + Math.max(0, i.available_stock), 0);
   const totalRodKgAvailable = rodStock.reduce((s, i) => s + Math.max(0, i.available_stock), 0);
+  const totalHardwareUnitsAvailable = hardwareStock.reduce((s, i) => s + Math.max(0, i.available_stock), 0);
+
   const totalInventoryValue =
     cementStock.reduce((s, i) => s + i.stock_value, 0) +
-    rodStock.reduce((s, i) => s + i.stock_value, 0);
+    rodStock.reduce((s, i) => s + i.stock_value, 0) +
+    hardwareStock.reduce((s, i) => s + i.stock_value, 0);
 
   const lowStockCount =
     cementStock.filter(c => c.available_stock <= 20).length +
-    rodStock.filter(r => r.available_stock <= 100).length;
+    rodStock.filter(r => r.available_stock <= 100).length +
+    hardwareStock.filter(h => h.available_stock <= 10).length;
 
   return {
     cementStock,
     rodStock,
+    hardwareStock,
     totalCementBagsAvailable: Number(totalCementBagsAvailable.toFixed(2)),
     totalRodKgAvailable: Number(totalRodKgAvailable.toFixed(2)),
+    totalHardwareUnitsAvailable: Number(totalHardwareUnitsAvailable.toFixed(2)),
     totalInventoryValue: Number(totalInventoryValue.toFixed(2)),
     lowStockCount,
   };
