@@ -147,6 +147,9 @@ export default function CustomersPage() {
       docNumber: string;
       category: string;
       particulars: string;
+      goodsDescription?: string;
+      labourAmount?: number;
+      transportAmount?: number;
       debit: number;
       credit: number;
       balance: number;
@@ -156,35 +159,33 @@ export default function CustomersPage() {
 
     // 1. Bills (Debits)
     for (const b of customerBills) {
-      let particulars = "";
+      let goodsDescription = "";
       if (b.bill_category === "cement") {
         const type = b.cement_details?.cement_type || "Cement";
         const bags = b.cement_details?.qty_bags || 0;
         const rate = b.cement_details?.unit_rate || 0;
-        particulars = bags > 0 
+        goodsDescription = bags > 0 
           ? `${type} Cement — ${bags} Bags @ ${formatCurrency(rate)}/bag` 
           : `${type} Cement Supply`;
       } else if (b.bill_category === "rod") {
         const size = b.rod_details?.rod_size || "Steel";
         const kg = b.rod_details?.qty_kg || 0;
         const rate = b.rod_details?.rate_per_kg || 0;
-        particulars = kg > 0 
+        goodsDescription = kg > 0 
           ? `TMT Steel Rod ${size} — ${kg.toFixed(2)} Kg @ ${formatCurrency(rate)}/kg` 
           : `TMT Steel Rod Supply`;
       } else {
         if (b.items && b.items.length > 0) {
-          particulars = b.items.map(it => `${it.item_name} (Qty: ${it.quantity})`).join(", ");
+          goodsDescription = b.items.map(it => `${it.item_name} (Qty: ${it.quantity})`).join(", ");
         } else {
-          particulars = "Electrical & Hardware Daily Items Supply";
+          goodsDescription = "Electrical & Hardware Daily Items Supply";
         }
       }
 
-      if (b.labour_amount || b.transport_amount) {
-        const addOns: string[] = [];
-        if (b.labour_amount) addOns.push(`Labour: ${formatCurrency(b.labour_amount)}`);
-        if (b.transport_amount) addOns.push(`Transport: ${formatCurrency(b.transport_amount)}`);
-        particulars += ` [${addOns.join(", ")}]`;
-      }
+      const addOns: string[] = [];
+      if (b.labour_amount) addOns.push(`Labour: ${formatCurrency(b.labour_amount)}`);
+      if (b.transport_amount) addOns.push(`Transport: ${formatCurrency(b.transport_amount)}`);
+      const particulars = addOns.length > 0 ? `${goodsDescription} [${addOns.join(", ")}]` : goodsDescription;
 
       list.push({
         id: b.id,
@@ -194,6 +195,9 @@ export default function CustomersPage() {
         docNumber: `Bill #${b.bill_number}`,
         category: b.bill_category.toUpperCase(),
         particulars,
+        goodsDescription,
+        labourAmount: b.labour_amount,
+        transportAmount: b.transport_amount,
         debit: b.total_amount || 0,
         credit: 0,
         balance: 0
@@ -771,12 +775,12 @@ export default function CustomersPage() {
                           <table className="w-full table-fixed text-left text-[11px] border-collapse">
                             <colgroup>
                               <col style={{ width: "11%" }} />
+                              <col style={{ width: "13%" }} />
+                              <col style={{ width: "32%" }} />
+                              <col style={{ width: "7%" }} />
+                              <col style={{ width: "12%" }} />
+                              <col style={{ width: "11%" }} />
                               <col style={{ width: "14%" }} />
-                              <col style={{ width: "27%" }} />
-                              <col style={{ width: "8%" }} />
-                              <col style={{ width: "12%" }} />
-                              <col style={{ width: "12%" }} />
-                              <col style={{ width: "16%" }} />
                             </colgroup>
                             <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300 text-[10px] uppercase">
                               <tr>
@@ -829,8 +833,26 @@ export default function CustomersPage() {
                                     <td className="py-2 px-2 font-mono font-bold text-slate-900 whitespace-nowrap text-[10px] truncate" title={e.docNumber}>
                                       {e.docNumber}
                                     </td>
-                                    <td className="py-2 px-2 text-[10px] leading-tight">
-                                      <div className="font-semibold text-slate-900 break-words line-clamp-2">{e.particulars}</div>
+                                    <td className="py-2.5 px-2 text-[10px] leading-snug">
+                                      <div className="font-semibold text-slate-900 break-words">
+                                        {e.goodsDescription || e.particulars}
+                                      </div>
+                                      {(Boolean(e.labourAmount) || Boolean(e.transportAmount)) && (
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[9px]">
+                                          {Boolean(e.labourAmount) && (
+                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200/80 font-medium">
+                                              <span className="text-amber-700">Hamali/Labour:</span>
+                                              <span className="font-bold">+{formatCurrency(e.labourAmount || 0)}</span>
+                                            </span>
+                                          )}
+                                          {Boolean(e.transportAmount) && (
+                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200/80 font-medium">
+                                              <span className="text-blue-700">Transport:</span>
+                                              <span className="font-bold">+{formatCurrency(e.transportAmount || 0)}</span>
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
                                     </td>
                                     <td className="py-2 px-1 text-center">
                                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold inline-block ${
