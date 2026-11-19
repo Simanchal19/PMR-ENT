@@ -237,13 +237,13 @@ export default function SalesPage() {
                   </div>
                   {Boolean(selectedBill.labour_amount) && (
                     <div className="flex justify-between">
-                      <span>Labour Cost / Loading:</span>
+                      <span>Labour Charge:</span>
                       <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_amount || 0)}</span>
                     </div>
                   )}
                   {Boolean(selectedBill.transport_amount) && (
                     <div className="flex justify-between">
-                      <span>Transport Cost / Delivery:</span>
+                      <span>Transport Charge:</span>
                       <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.transport_amount || 0)}</span>
                     </div>
                   )}

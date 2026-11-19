@@ -183,8 +183,8 @@ export default function CustomersPage() {
       }
 
       const addOns: string[] = [];
-      if (b.labour_amount) addOns.push(`Labour: ${formatCurrency(b.labour_amount)}`);
-      if (b.transport_amount) addOns.push(`Transport: ${formatCurrency(b.transport_amount)}`);
+      if (b.labour_amount) addOns.push(`Labour Charge: ${formatCurrency(b.labour_amount)}`);
+      if (b.transport_amount) addOns.push(`Transport Charge: ${formatCurrency(b.transport_amount)}`);
       const particulars = addOns.length > 0 ? `${goodsDescription} [${addOns.join(", ")}]` : goodsDescription;
 
       list.push({
@@ -841,13 +841,13 @@ export default function CustomersPage() {
                                         <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[9px]">
                                           {Boolean(e.labourAmount) && (
                                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200/80 font-medium">
-                                              <span className="text-amber-700">Hamali/Labour:</span>
+                                              <span className="text-amber-700">Labour Charge:</span>
                                               <span className="font-bold">+{formatCurrency(e.labourAmount || 0)}</span>
                                             </span>
                                           )}
                                           {Boolean(e.transportAmount) && (
                                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200/80 font-medium">
-                                              <span className="text-blue-700">Transport:</span>
+                                              <span className="text-blue-700">Transport Charge:</span>
                                               <span className="font-bold">+{formatCurrency(e.transportAmount || 0)}</span>
                                             </span>
                                           )}

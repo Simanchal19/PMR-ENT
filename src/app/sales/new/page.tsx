@@ -393,7 +393,7 @@ export default function CreateBillPage() {
       items.push({
         id: `item-${Date.now()}-labour`,
         bill_id: "",
-        item_name: "Labour / Loading Charges",
+        item_name: "Labour Charge",
         item_category: category,
         quantity: 1,
         unit: "SERVICE",
@@ -407,7 +407,7 @@ export default function CreateBillPage() {
       items.push({
         id: `item-${Date.now()}-transport`,
         bill_id: "",
-        item_name: "Transport / Delivery Charges",
+        item_name: "Transport Charge",
         item_category: category,
         quantity: 1,
         unit: "SERVICE",
@@ -474,10 +474,10 @@ export default function CreateBillPage() {
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 font-medium pt-1">
               <span>Goods: <strong className="text-slate-800">{formatCurrency(successBill.subtotal)}</strong></span>
               {successBill.labour_amount ? (
-                <span>• Labour: <strong className="text-slate-800">+{formatCurrency(successBill.labour_amount)}</strong></span>
+                <span>• Labour Charge: <strong className="text-slate-800">+{formatCurrency(successBill.labour_amount)}</strong></span>
               ) : null}
               {successBill.transport_amount ? (
-                <span>• Transport: <strong className="text-slate-800">+{formatCurrency(successBill.transport_amount)}</strong></span>
+                <span>• Transport Charge: <strong className="text-slate-800">+{formatCurrency(successBill.transport_amount)}</strong></span>
               ) : null}
             </div>
           ) : null}
@@ -1015,7 +1015,7 @@ export default function CreateBillPage() {
                 {/* Labour Cost */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Labour Cost / Loading (₹)
+                    Labour Charge (₹)
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
@@ -1032,14 +1032,14 @@ export default function CreateBillPage() {
                     />
                   </div>
                   <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    Hamali, loading, or unloading charges
+                    Loading, unloading, or labour charges
                   </span>
                 </div>
 
                 {/* Transport Cost */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Transport Cost / Delivery (₹)
+                    Transport Charge (₹)
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
@@ -1073,10 +1073,10 @@ export default function CreateBillPage() {
                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                     <span>Goods: <strong className="text-slate-800">{formatCurrency(goodsSubtotal)}</strong></span>
                     {labourVal > 0 && (
-                      <span>• Labour: <strong className="text-slate-800">+{formatCurrency(labourVal)}</strong></span>
+                      <span>• Labour Charge: <strong className="text-slate-800">+{formatCurrency(labourVal)}</strong></span>
                     )}
                     {transportVal > 0 && (
-                      <span>• Transport: <strong className="text-slate-800">+{formatCurrency(transportVal)}</strong></span>
+                      <span>• Transport Charge: <strong className="text-slate-800">+{formatCurrency(transportVal)}</strong></span>
                     )}
                   </div>
                 )}
