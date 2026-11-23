@@ -379,5 +379,30 @@ export interface StockItemSummary {
   stock_value: number;
 }
 
+export interface EstimateItem {
+  id: string;
+  serial_no: number;
+  product_name: string;
+  quantity: number;
+  unit: string; // Bags, Kg, Pcs, Brass, Trips, Coils, Mtrs, Sq.Ft, Set, Unit, etc.
+  rate: number;
+  total_amount: number;
+}
+
+export interface HouseEstimate {
+  id: string;
+  estimate_number: string; // e.g. EST-2026-001
+  date: string;
+  customer_name: string;
+  customer_phone?: string;
+  project_title?: string; // e.g. "Residential House Construction"
+  site_address?: string;
+  notes?: string;
+  items: EstimateItem[];
+  total_items: number;
+  grand_total: number;
+  created_at: string;
+}
+
 
 

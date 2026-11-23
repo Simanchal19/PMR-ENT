@@ -22,7 +22,9 @@ import {
   SupplierPaymentAllocation,
   PurchaseReturn,
   StockItemSummary,
-  PaymentMode
+  PaymentMode,
+  EstimateItem,
+  HouseEstimate
 } from "./types";
 import { DateRange, isDateInRange } from "./period";
 
@@ -44,6 +46,7 @@ const STORAGE_KEYS = {
   PURCHASE_BILLS: "tpm_purchase_bills_v1",
   SUPPLIER_PAYMENTS: "tpm_supplier_payments_v1",
   PURCHASE_RETURNS: "tpm_purchase_returns_v1",
+  ESTIMATES: "tpm_estimates_v1",
 };
 
 // Safe browser local-storage check
@@ -3074,6 +3077,81 @@ export function calculateInventoryStock(): {
     lowStockCount,
   };
 }
+
+/* ---------------- HOUSE CONSTRUCTION ESTIMATES CRUD ---------------- */
+
+export function getEstimates(): HouseEstimate[] {
+  if (!isClient()) return [];
+  const raw = localStorage.getItem(STORAGE_KEYS.ESTIMATES);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveEstimates(estimates: HouseEstimate[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.ESTIMATES, JSON.stringify(estimates));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+  }
+}
+
+export function generateEstimateNumber(): string {
+  const estimates = getEstimates();
+  const year = new Date().getFullYear();
+  const nextSeq = estimates.length + 1;
+  return `EST-${year}-${String(nextSeq).padStart(3, "0")}`;
+}
+
+export function createEstimate(
+  data: Omit<HouseEstimate, "id" | "estimate_number" | "created_at">,
+  actor?: string
+): HouseEstimate {
+  const estimates = getEstimates();
+  const estimateNumber = generateEstimateNumber();
+
+  const newEst: HouseEstimate = {
+    ...data,
+    id: `est-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    estimate_number: estimateNumber,
+    created_at: new Date().toISOString(),
+  };
+
+  estimates.unshift(newEst);
+  saveEstimates(estimates);
+
+  addAuditLog({
+    action: "CREATE_ESTIMATE",
+    entity: `Estimate #${estimateNumber} (${newEst.customer_name || "Walk-in"})`,
+    actor: actor || "System User",
+    notes: `Generated House Cost Estimate #${estimateNumber} for ₹${newEst.grand_total.toFixed(2)} with ${newEst.total_items} items.`,
+  });
+
+  return newEst;
+}
+
+export function deleteEstimate(id: string, actor?: string): boolean {
+  const estimates = getEstimates();
+  const idx = estimates.findIndex(e => e.id === id);
+  if (idx === -1) return false;
+
+  const removed = estimates[idx];
+  estimates.splice(idx, 1);
+  saveEstimates(estimates);
+
+  addAuditLog({
+    action: "DELETE_ESTIMATE",
+    entity: `Estimate #${removed.estimate_number}`,
+    actor: actor || "System User",
+    notes: `Deleted House Estimate #${removed.estimate_number} (${removed.customer_name}).`,
+  });
+
+  return true;
+}
+
 
 
 

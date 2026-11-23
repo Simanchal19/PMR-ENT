@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   LogOut,
   Truck,
-  Package
+  Package,
+  Calculator
 } from "lucide-react";
 import { getReturns, getStoredUserRole } from "@/lib/storage";
 import { UserRole, AuthUser } from "@/lib/types";
@@ -101,6 +102,12 @@ export default function Sidebar() {
       title: "Overview",
       items: [
         { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: "Eastimate",
+      items: [
+        { href: "/estimate", label: "House Cost Estimate", icon: Calculator, highlight: true },
       ],
     },
     {
