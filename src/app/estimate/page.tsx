@@ -312,9 +312,9 @@ export default function EstimatePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+    <div className="space-y-5 sm:space-y-6 max-w-6xl mx-auto pb-28 md:pb-12">
       {/* 1. Header & Title Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
@@ -330,52 +330,52 @@ export default function EstimatePage() {
         </div>
 
         {/* Header Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleLoadHousePresets}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-300 shadow-2xs transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-300 shadow-2xs transition-colors"
             title="Load standard house building checklist from foundation to roof"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>⚡ Load House Checklist</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <span className="truncate">⚡ House Checklist</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowSavedModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-colors"
           >
-            <FolderOpen className="w-3.5 h-3.5 text-slate-600" />
-            <span>Saved ({savedEstimates.length})</span>
+            <FolderOpen className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+            <span className="truncate">Saved ({savedEstimates.length})</span>
           </button>
 
           <button
             type="button"
             onClick={handleSaveEstimate}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors"
+            className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors"
           >
-            <Save className="w-3.5 h-3.5" />
+            <Save className="w-3.5 h-3.5 shrink-0" />
             <span>Save Estimate</span>
           </button>
 
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors"
           >
-            <Printer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Print Estimate</span>
+            <Printer className="w-3.5 h-3.5 shrink-0" />
+            <span>Print</span>
           </button>
 
           <button
             type="button"
             disabled={isDownloadingPdf}
             onClick={handleDownloadPdf}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
           >
-            <FileDown className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isDownloadingPdf ? "Exporting..." : "PDF"}</span>
+            <FileDown className="w-3.5 h-3.5 shrink-0" />
+            <span>{isDownloadingPdf ? "..." : "PDF"}</span>
           </button>
         </div>
       </div>
@@ -500,23 +500,23 @@ export default function EstimatePage() {
       {/* 3. Materials & Equipment Estimate Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         {/* Table Subheader */}
-        <div className="p-3.5 sm:p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-3 sm:p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+            <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
               <Layers className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-bold text-sm text-slate-900">
+              <h2 className="font-bold text-xs sm:text-sm text-slate-900">
                 Equipment &amp; Materials Cost Sheet
               </h2>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[10px] sm:text-[11px] text-slate-500">
                 Automatic Serial No • Product Name • Quantity &amp; Unit • Rate • Total Amount
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-600 bg-white sm:bg-transparent px-2 py-0.5 sm:p-0 rounded border sm:border-0 border-slate-200">
               {totalItemCount} {totalItemCount === 1 ? "Item" : "Items"}
             </span>
             <button
@@ -538,8 +538,8 @@ export default function EstimatePage() {
           ))}
         </datalist>
 
-        {/* Responsive Table */}
-        <div className="overflow-x-auto">
+        {/* Desktop View: Full Table (md:block) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-100/80 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
               <tr>
@@ -677,38 +677,221 @@ export default function EstimatePage() {
             </tfoot>
           </table>
         </div>
+
+        {/* Mobile View: High-density Material Cards (md:hidden) */}
+        <div className="md:hidden p-3 space-y-3 bg-slate-50/50">
+          {items.map((item, idx) => (
+            <div
+              key={item.id}
+              className="p-3 bg-white rounded-xl border border-slate-200/90 shadow-2xs space-y-2.5 transition-all hover:border-blue-300"
+            >
+              {/* Row 1: Serial No badge + Product Name input + Delete button */}
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
+                  #{item.serial_no}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <input
+                    ref={(el) => {
+                      productInputRefs.current[item.id] = el;
+                    }}
+                    type="text"
+                    list="estimate-materials-catalog"
+                    placeholder="Product / Material (e.g. LNT Cement)"
+                    value={item.product_name}
+                    onChange={(e) => handleItemChange(idx, "product_name", e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveRow(idx)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
+                  title="Remove item"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Row 2: Quantity, Unit, Rate in a clean 3-part responsive row */}
+              <div className="grid grid-cols-12 gap-2 pt-1 border-t border-slate-100">
+                {/* Quantity (4 cols) */}
+                <div className="col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="0"
+                    value={item.quantity === 0 ? "" : item.quantity}
+                    onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs text-center rounded-lg border border-slate-200 bg-slate-50/50 font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Unit (3 cols) */}
+                <div className="col-span-3">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
+                    Unit
+                  </label>
+                  <select
+                    value={item.unit}
+                    onChange={(e) => handleItemChange(idx, "unit", e.target.value)}
+                    className="w-full px-1 py-1.5 text-[11px] rounded-lg border border-slate-200 bg-white font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  >
+                    <option value="Bags">Bags</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Pcs">Pcs</option>
+                    <option value="Brass">Brass</option>
+                    <option value="Trips">Trips</option>
+                    <option value="Coils">Coils</option>
+                    <option value="Mtrs">Mtrs</option>
+                    <option value="Sq.Ft">Sq.Ft</option>
+                    <option value="Sets">Sets</option>
+                    <option value="Unit">Unit</option>
+                    <option value="Ton">Ton</option>
+                    <option value="Buckets">Buckets</option>
+                  </select>
+                </div>
+
+                {/* Rate (5 cols) */}
+                <div className="col-span-5">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
+                    Rate / Unit (₹)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-xs pointer-events-none">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      placeholder="0.00"
+                      value={item.rate === 0 ? "" : item.rate}
+                      onChange={(e) => handleItemChange(idx, "rate", e.target.value)}
+                      className="w-full pl-5 pr-2 py-1.5 text-xs text-right rounded-lg border border-slate-200 bg-slate-50/50 font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Live Subtotal calculation strip */}
+              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-blue-50/60 border border-blue-100 text-xs">
+                <span className="text-[11px] text-slate-600 font-medium truncate">
+                  Total: <strong className="text-slate-800">{item.quantity || 0} {item.unit}</strong> × ₹{item.rate || 0}
+                </span>
+                <span className="font-mono font-bold text-blue-700 text-xs shrink-0 pl-2">
+                  {formatCurrency(item.total_amount)}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {/* Mobile Bottom Actions under list */}
+          <div className="pt-2 space-y-2">
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add Next Item</span>
+            </button>
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={handleLoadHousePresets}
+                className="flex-1 py-2 px-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-300 text-center flex items-center justify-center gap-1"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>House Checklist</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="py-2 px-3 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold border border-slate-200 bg-white"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 4. Grand Total Summary Card */}
-      <div className="bg-gradient-to-r from-[#14243A] to-[#1E3A8A] text-white rounded-xl p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-[#14243A] to-[#1E3A8A] text-white rounded-xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-200">
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-blue-200">
             Total Estimated Construction Cost
           </span>
-          <div className="text-3xl font-black text-white mt-1">
+          <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 sm:mt-1">
             {formatCurrency(grandTotal)}
           </div>
-          <p className="text-xs text-blue-200 mt-1">
+          <p className="text-[11px] sm:text-xs text-blue-200 mt-1">
             Across <strong className="text-white">{totalItemCount}</strong> materials &amp; equipment items listed for building.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 sm:pt-0 border-t border-blue-900/60 sm:border-0">
           <button
             type="button"
             onClick={handleSaveEstimate}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-colors"
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-colors"
           >
             <Save className="w-4 h-4" />
             <span>Save &amp; Record Estimate</span>
           </button>
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold shadow-sm transition-colors"
+            >
+              <Printer className="w-4 h-4 text-slate-800" />
+              <span>Print Quotation</span>
+            </button>
+            <button
+              type="button"
+              disabled={isDownloadingPdf}
+              onClick={handleDownloadPdf}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>{isDownloadingPdf ? "Exporting..." : "Export PDF"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Sticky Floating Mobile Bottom Bar (Always visible while scrolling on mobile) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#14243A]/95 backdrop-blur-md text-white px-3.5 py-2.5 border-t border-slate-700/80 shadow-2xl flex items-center justify-between gap-3 no-print">
+        <div className="min-w-0">
+          <span className="block text-[10px] text-blue-300 uppercase font-semibold">
+            Estimated Total ({totalItemCount} {totalItemCount === 1 ? "item" : "items"})
+          </span>
+          <span className="text-base font-black text-white truncate block">
+            {formatCurrency(grandTotal)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold shadow-sm transition-colors"
+            onClick={handleAddRow}
+            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-transform"
           >
-            <Printer className="w-4 h-4 text-slate-800" />
-            <span>Print Official Quotation</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Item</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveEstimate}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-transform"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>Save</span>
           </button>
         </div>
       </div>
@@ -897,7 +1080,10 @@ export default function EstimatePage() {
                 </div>
               ) : (
                 savedEstimates.map((est) => (
-                  <div key={est.id} className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50/70 px-2 rounded-lg transition-colors">
+                  <div
+                    key={est.id}
+                    className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 hover:bg-slate-50/70 p-2 rounded-lg transition-colors border border-slate-100 sm:border-0"
+                  >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-slate-900 uppercase truncate">
@@ -912,26 +1098,28 @@ export default function EstimatePage() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1.5 sm:pt-0 border-t border-slate-100 sm:border-0">
                       <span className="font-mono font-bold text-xs text-slate-900">
                         {formatCurrency(est.grand_total)}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => handleLoadEstimate(est)}
-                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1 shadow-2xs"
-                      >
-                        <span>Load</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSavedEstimate(est.id)}
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded"
-                        title="Delete estimate"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleLoadEstimate(est)}
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1 shadow-2xs"
+                        >
+                          <span>Load</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSavedEstimate(est.id)}
+                          className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                          title="Delete estimate"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
