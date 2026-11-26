@@ -24,7 +24,8 @@ import {
   StockItemSummary,
   PaymentMode,
   EstimateItem,
-  HouseEstimate
+  HouseEstimate,
+  EnterpriseUserRecord
 } from "./types";
 import { DateRange, isDateInRange } from "./period";
 
@@ -47,6 +48,7 @@ const STORAGE_KEYS = {
   SUPPLIER_PAYMENTS: "tpm_supplier_payments_v1",
   PURCHASE_RETURNS: "tpm_purchase_returns_v1",
   ESTIMATES: "tpm_estimates_v1",
+  USERS: "tpm_enterprise_users_v2",
 };
 
 // Safe browser local-storage check
@@ -981,10 +983,10 @@ export function allocatePaymentToBills(params: {
   notes?: string;
 }): AllocationResult {
   const role = getStoredUserRole();
-  if (role !== "owner" && role !== "manager") {
+  if (role !== "owner" && role !== "manager" && role !== "admin") {
     return {
       success: false,
-      error: "Authorization required: Only Owner or Manager can allocate payments."
+      error: "Authorization required: Only Owner, Manager or Admin can allocate payments."
     };
   }
 
@@ -1045,7 +1047,7 @@ export function allocatePaymentToBills(params: {
   }
 
   // Atomic Execution
-  const actorName = role === "owner" ? "Pramod Maharaj (Owner)" : "Manager";
+  const actorName = role === "owner" ? "Pramod Maharaj (Owner)" : role === "admin" ? "System Administrator (Admin)" : "Manager";
   const nowIso = new Date().toISOString();
   if (!payment.allocations) payment.allocations = [];
 
@@ -1114,10 +1116,10 @@ export function reversePaymentAllocation(params: {
   reason?: string;
 }): { success: boolean; error?: string; audit_log?: AuditLog } {
   const role = getStoredUserRole();
-  if (role !== "owner" && role !== "manager") {
+  if (role !== "owner" && role !== "manager" && role !== "admin") {
     return {
       success: false,
-      error: "Authorization required: Only Owner or Manager can reverse payment allocations."
+      error: "Authorization required: Only Owner, Manager or Admin can reverse payment allocations."
     };
   }
 
@@ -1153,7 +1155,7 @@ export function reversePaymentAllocation(params: {
     saveBills(bills);
   }
 
-  const actorName = role === "owner" ? "Pramod Maharaj (Owner)" : "Manager";
+  const actorName = role === "owner" ? "Pramod Maharaj (Owner)" : role === "admin" ? "System Administrator (Admin)" : "Manager";
   const auditEntry = addAuditLog({
     action: "ALLOCATION_REVERSAL",
     entity: `Payment ${payment.receipt_number} ➔ Bill #${billNumber}`,
@@ -3150,6 +3152,371 @@ export function deleteEstimate(id: string, actor?: string): boolean {
   });
 
   return true;
+}
+
+/* ---------------- CUSTOMER & SUPPLIER UPDATE FUNCTIONS (ADMIN / OWNER) ---------------- */
+
+export function updateCustomer(
+  id: string,
+  data: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    gstin?: string;
+    opening_balance?: number;
+  },
+  actor?: string
+): { success: boolean; customer?: Customer; error?: string } {
+  const customers = getCustomers();
+  const idx = customers.findIndex(c => c.id === id);
+  if (idx === -1) {
+    return { success: false, error: "Customer not found." };
+  }
+
+  const existing = customers[idx];
+  const oldOpening = existing.opening_balance || 0;
+  const newOpening = data.opening_balance !== undefined ? Number(data.opening_balance) : oldOpening;
+  const diffOpening = newOpening - oldOpening;
+
+  const updated: Customer = {
+    ...existing,
+    name: data.name !== undefined ? data.name.trim().toUpperCase() : existing.name,
+    phone: data.phone !== undefined ? data.phone.trim() : existing.phone,
+    email: data.email !== undefined ? data.email.trim() : existing.email,
+    address: data.address !== undefined ? data.address.trim() : existing.address,
+    gstin: data.gstin !== undefined ? data.gstin.trim().toUpperCase() : existing.gstin,
+    opening_balance: newOpening,
+    current_balance: existing.current_balance + diffOpening,
+  };
+
+  customers[idx] = updated;
+  saveCustomers(customers);
+
+  addAuditLog({
+    action: "UPDATE_CUSTOMER",
+    entity: `Customer #${updated.code || updated.id} (${updated.name})`,
+    actor: actor || "System Administrator",
+    notes: `Updated customer details.${diffOpening !== 0 ? ` Opening balance adjusted from ₹${oldOpening} to ₹${newOpening}.` : ""}`,
+  });
+
+  return { success: true, customer: updated };
+}
+
+export function updateSupplier(
+  id: string,
+  data: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    gstin?: string;
+    category?: "cement" | "rod" | "daily" | "all";
+    opening_balance?: number;
+  },
+  actor?: string
+): { success: boolean; supplier?: Supplier; error?: string } {
+  const suppliers = getSuppliers();
+  const idx = suppliers.findIndex(s => s.id === id);
+  if (idx === -1) {
+    return { success: false, error: "Supplier not found." };
+  }
+
+  const existing = suppliers[idx];
+  const oldOpening = existing.opening_balance || 0;
+  const newOpening = data.opening_balance !== undefined ? Number(data.opening_balance) : oldOpening;
+  const diffOpening = newOpening - oldOpening;
+
+  const updated: Supplier = {
+    ...existing,
+    name: data.name !== undefined ? data.name.trim().toUpperCase() : existing.name,
+    phone: data.phone !== undefined ? data.phone.trim() : existing.phone,
+    email: data.email !== undefined ? data.email.trim() : existing.email,
+    address: data.address !== undefined ? data.address.trim() : existing.address,
+    gstin: data.gstin !== undefined ? data.gstin.trim().toUpperCase() : existing.gstin,
+    supply_category: data.category !== undefined ? data.category : existing.supply_category,
+    opening_balance: newOpening,
+    current_balance: existing.current_balance + diffOpening,
+  };
+
+  suppliers[idx] = updated;
+  saveSuppliers(suppliers);
+
+  addAuditLog({
+    action: "UPDATE_SUPPLIER",
+    entity: `Supplier #${updated.code || updated.id} (${updated.name})`,
+    actor: actor || "System Administrator",
+    notes: `Updated supplier details.${diffOpening !== 0 ? ` Opening balance adjusted from ₹${oldOpening} to ₹${newOpening}.` : ""}`,
+  });
+
+  return { success: true, supplier: updated };
+}
+
+/* ---------------- ENTERPRISE USERS & LOGIN MANAGEMENT CRUD (ADMIN CONSOLE) ---------------- */
+
+export const DEFAULT_ENTERPRISE_USERS: EnterpriseUserRecord[] = [
+  {
+    id: "usr-owner-001",
+    email: "owner@pramodmaharaj.in",
+    username: "owner",
+    allowedUsernames: ["owner", "pramod.maharaj", "pramod"],
+    passwordHash: "Password@123",
+    fullName: "Pramod Maharaj",
+    role: "owner",
+    businessName: "THE PRAMOD MAHARAJ ENTERPRISES",
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "usr-manager-002",
+    email: "manager@pramodmaharaj.in",
+    username: "manager",
+    allowedUsernames: ["manager", "rajesh.patnaik", "rajesh"],
+    passwordHash: "Password@123",
+    fullName: "Rajesh Patnaik (Store Manager)",
+    role: "manager",
+    businessName: "THE PRAMOD MAHARAJ ENTERPRISES",
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "usr-admin-003",
+    email: "admin@pramodmaharaj.in",
+    username: "admin",
+    allowedUsernames: ["admin", "tpm.admin", "sysadmin"],
+    passwordHash: "Password@123",
+    fullName: "System Administrator (IT & Audit)",
+    role: "admin",
+    businessName: "THE PRAMOD MAHARAJ ENTERPRISES",
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+];
+
+export function getEnterpriseUsers(): EnterpriseUserRecord[] {
+  if (!isClient()) return DEFAULT_ENTERPRISE_USERS;
+  const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+  if (!raw) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_ENTERPRISE_USERS));
+    return DEFAULT_ENTERPRISE_USERS;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_ENTERPRISE_USERS));
+    return DEFAULT_ENTERPRISE_USERS;
+  } catch {
+    return DEFAULT_ENTERPRISE_USERS;
+  }
+}
+
+export function saveEnterpriseUsers(users: EnterpriseUserRecord[]): void {
+  if (isClient()) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    window.dispatchEvent(new Event("tpm_data_updated"));
+    window.dispatchEvent(new Event("tpm_users_updated"));
+  }
+}
+
+export function createEnterpriseUser(
+  data: {
+    fullName: string;
+    username: string;
+    email: string;
+    role: UserRole;
+    password: string;
+    businessName?: string;
+  },
+  actor?: string
+): { success: boolean; user?: EnterpriseUserRecord; error?: string } {
+  const users = getEnterpriseUsers();
+  const cleanUsername = data.username.trim().toLowerCase();
+  const cleanEmail = data.email.trim().toLowerCase();
+
+  if (!cleanUsername || !data.password || !data.fullName.trim()) {
+    return { success: false, error: "Please enter Full Name, Username, and Password." };
+  }
+
+  // Check unique username and email
+  if (users.some(u => u.username.toLowerCase() === cleanUsername || (u.allowedUsernames && u.allowedUsernames.includes(cleanUsername)))) {
+    return { success: false, error: `Username "${cleanUsername}" is already taken.` };
+  }
+  if (cleanEmail && users.some(u => u.email.toLowerCase() === cleanEmail)) {
+    return { success: false, error: `Email "${cleanEmail}" is already registered.` };
+  }
+
+  const newUser: EnterpriseUserRecord = {
+    id: `usr-${data.role}-${Date.now()}`,
+    fullName: data.fullName.trim(),
+    username: cleanUsername,
+    allowedUsernames: [cleanUsername],
+    email: cleanEmail || `${cleanUsername}@pramodmaharaj.in`,
+    role: data.role,
+    passwordHash: data.password,
+    businessName: data.businessName || "THE PRAMOD MAHARAJ ENTERPRISES",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  users.push(newUser);
+  saveEnterpriseUsers(users);
+
+  addAuditLog({
+    action: "CREATE_USER",
+    entity: `User @${newUser.username} (${newUser.role.toUpperCase()})`,
+    actor: actor || "System Administrator",
+    notes: `Created new ${newUser.role.toUpperCase()} account for "${newUser.fullName}".`,
+  });
+
+  return { success: true, user: newUser };
+}
+
+export function updateEnterpriseUser(
+  id: string,
+  data: {
+    fullName?: string;
+    username?: string;
+    email?: string;
+    role?: UserRole;
+    businessName?: string;
+  },
+  actor?: string
+): { success: boolean; user?: EnterpriseUserRecord; error?: string } {
+  const users = getEnterpriseUsers();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return { success: false, error: "User account not found." };
+
+  const existing = users[idx];
+  const cleanUsername = data.username ? data.username.trim().toLowerCase() : existing.username;
+  const cleanEmail = data.email ? data.email.trim().toLowerCase() : existing.email;
+
+  if (cleanUsername !== existing.username) {
+    if (users.some(u => u.id !== id && (u.username.toLowerCase() === cleanUsername || (u.allowedUsernames && u.allowedUsernames.includes(cleanUsername))))) {
+      return { success: false, error: `Username "${cleanUsername}" is already taken.` };
+    }
+  }
+
+  if (cleanEmail !== existing.email) {
+    if (users.some(u => u.id !== id && u.email.toLowerCase() === cleanEmail)) {
+      return { success: false, error: `Email "${cleanEmail}" is already registered.` };
+    }
+  }
+
+  const updated: EnterpriseUserRecord = {
+    ...existing,
+    fullName: data.fullName !== undefined ? data.fullName.trim() : existing.fullName,
+    username: cleanUsername,
+    allowedUsernames: Array.from(new Set([cleanUsername, ...(existing.allowedUsernames || [])])),
+    email: cleanEmail,
+    role: data.role !== undefined ? data.role : existing.role,
+    businessName: data.businessName !== undefined ? data.businessName : existing.businessName,
+    updatedAt: new Date().toISOString(),
+  };
+
+  users[idx] = updated;
+  saveEnterpriseUsers(users);
+
+  addAuditLog({
+    action: "UPDATE_USER",
+    entity: `User @${updated.username} (${updated.role.toUpperCase()})`,
+    actor: actor || "System Administrator",
+    notes: `Updated user profile details for "${updated.fullName}".`,
+  });
+
+  return { success: true, user: updated };
+}
+
+export function updateUserPassword(
+  id: string,
+  newPassword: string,
+  actor?: string
+): { success: boolean; error?: string } {
+  if (!newPassword || newPassword.length < 4) {
+    return { success: false, error: "Password must be at least 4 characters long." };
+  }
+
+  const users = getEnterpriseUsers();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return { success: false, error: "User account not found." };
+
+  const user = users[idx];
+  user.passwordHash = newPassword;
+  user.updatedAt = new Date().toISOString();
+  users[idx] = user;
+  saveEnterpriseUsers(users);
+
+  addAuditLog({
+    action: "RESET_USER_PASSWORD",
+    entity: `User @${user.username} (${user.role.toUpperCase()})`,
+    actor: actor || "System Administrator",
+    notes: `Administrator updated password credentials for "${user.fullName}".`,
+  });
+
+  return { success: true };
+}
+
+export function toggleUserStatus(
+  id: string,
+  isActive: boolean,
+  actor?: string
+): { success: boolean; error?: string } {
+  const users = getEnterpriseUsers();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return { success: false, error: "User account not found." };
+
+  const user = users[idx];
+  if (!isActive && user.role === "admin") {
+    const activeAdmins = users.filter(u => u.role === "admin" && u.isActive && u.id !== id);
+    if (activeAdmins.length === 0) {
+      return { success: false, error: "Cannot deactivate the only active Administrator account." };
+    }
+  }
+
+  user.isActive = isActive;
+  user.updatedAt = new Date().toISOString();
+  users[idx] = user;
+  saveEnterpriseUsers(users);
+
+  addAuditLog({
+    action: "TOGGLE_USER_STATUS",
+    entity: `User @${user.username}`,
+    actor: actor || "System Administrator",
+    notes: `Account ${isActive ? "activated" : "deactivated"} for "${user.fullName}".`,
+  });
+
+  return { success: true };
+}
+
+export function deleteEnterpriseUser(
+  id: string,
+  actor?: string
+): { success: boolean; error?: string } {
+  const users = getEnterpriseUsers();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return { success: false, error: "User account not found." };
+
+  const user = users[idx];
+  if (user.role === "admin") {
+    const remainingAdmins = users.filter(u => u.role === "admin" && u.id !== id);
+    if (remainingAdmins.length === 0) {
+      return { success: false, error: "Cannot delete the last remaining Administrator account." };
+    }
+  }
+
+  users.splice(idx, 1);
+  saveEnterpriseUsers(users);
+
+  addAuditLog({
+    action: "DELETE_USER",
+    entity: `User @${user.username}`,
+    actor: actor || "System Administrator",
+    notes: `Permanently deleted account for "${user.fullName}" (${user.role.toUpperCase()}).`,
+  });
+
+  return { success: true };
 }
 
 

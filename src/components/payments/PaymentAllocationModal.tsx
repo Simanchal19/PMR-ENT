@@ -78,7 +78,7 @@ export default function PaymentAllocationModal({
 
   if (!isOpen || !payment) return null;
 
-  const isAuthorized = role === "owner" || role === "manager";
+  const isAuthorized = role === "owner" || role === "manager" || role === "admin";
 
   // Available unallocated credit on this receipt
   const totalAllocatedSoFar = (payment.allocations || []).reduce(
@@ -166,7 +166,7 @@ export default function PaymentAllocationModal({
     setSuccessMsg(null);
 
     if (!isAuthorized) {
-      setErrorMsg("Permission denied: Only Owner or Manager role can allocate payments.");
+      setErrorMsg("Permission denied: Only Admin, Owner or Manager role can allocate payments.");
       return;
     }
 
@@ -239,7 +239,7 @@ export default function PaymentAllocationModal({
 
   const handleReverseAllocation = (allocationId: string) => {
     if (!isAuthorized) {
-      alert("Permission denied: Only Owner or Manager can reverse allocations.");
+      alert("Permission denied: Only Admin, Owner or Manager can reverse allocations.");
       return;
     }
 
@@ -317,7 +317,7 @@ export default function PaymentAllocationModal({
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-2">
               <Lock className="w-4 h-4 text-amber-600 shrink-0" />
               <span className="text-xs font-semibold">
-                View Only: You are logged in as <span className="uppercase font-bold">{role}</span>. Only Owner or Manager role can link or reverse payment allocations.
+                View Only: You are logged in as <span className="uppercase font-bold">{role}</span>. Only Admin, Owner or Manager role can link or reverse payment allocations.
               </span>
             </div>
           )}

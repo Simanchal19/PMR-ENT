@@ -1,5 +1,5 @@
-import { AuthUser, AuthSession, UserRole, PortalRole } from "./types";
-import { setStoredUserRole, addAuditLog } from "./storage";
+import { AuthUser, AuthSession, UserRole, PortalRole, EnterpriseUserRecord } from "./types";
+import { setStoredUserRole, addAuditLog, getEnterpriseUsers, DEFAULT_ENTERPRISE_USERS } from "./storage";
 import { createClient, isSupabaseConfigured } from "./supabase/client";
 
 export const AUTH_COOKIE_NAME = "tpm_auth_session";
@@ -7,43 +7,9 @@ export const AUTH_COOKIE_NAME = "tpm_auth_session";
 /**
  * Enterprise User Directory
  * Verified system accounts with strict role-based access control.
- * These correspond to public.profiles in Supabase database schema.
+ * These correspond to public.profiles in Supabase database schema and localStorage.
  */
-export const ENTERPRISE_USERS: (AuthUser & { passwordHash: string; allowedUsernames: string[] })[] = [
-  {
-    id: "usr-owner-001",
-    email: "owner@pramodmaharaj.in",
-    username: "owner",
-    allowedUsernames: ["owner", "pramod.maharaj", "pramod"],
-    passwordHash: "Password@123",
-    fullName: "Pramod Maharaj",
-    role: "owner",
-    businessName: "THE PRAMOD MAHARAJ ENTERPRISES",
-    isActive: true,
-  },
-  {
-    id: "usr-manager-002",
-    email: "manager@pramodmaharaj.in",
-    username: "manager",
-    allowedUsernames: ["manager", "rajesh.patnaik", "rajesh"],
-    passwordHash: "Password@123",
-    fullName: "Rajesh Patnaik (Store Manager)",
-    role: "manager",
-    businessName: "THE PRAMOD MAHARAJ ENTERPRISES",
-    isActive: true,
-  },
-  {
-    id: "usr-admin-003",
-    email: "admin@pramodmaharaj.in",
-    username: "admin",
-    allowedUsernames: ["admin", "tpm.admin", "sysadmin"],
-    passwordHash: "Password@123",
-    fullName: "System Administrator (IT & Audit)",
-    role: "admin",
-    businessName: "THE PRAMOD MAHARAJ ENTERPRISES",
-    isActive: true,
-  },
-];
+export const ENTERPRISE_USERS: EnterpriseUserRecord[] = DEFAULT_ENTERPRISE_USERS;
 
 export const PORTAL_METADATA: Record<PortalRole, {
   title: string;
@@ -215,12 +181,13 @@ export async function signInWithPortal(params: SignInParams): Promise<AuthResult
     }
   }
 
-  // 2. Verified Enterprise User Registry (Standalone & Production Fallback)
-  const user = ENTERPRISE_USERS.find(
+  // 2. Verified Enterprise User Registry (Standalone & Production Dynamic Storage)
+  const dynamicUsers = getEnterpriseUsers();
+  const user = dynamicUsers.find(
     (u) =>
       u.email.toLowerCase() === input ||
       u.username.toLowerCase() === input ||
-      u.allowedUsernames.includes(input)
+      (u.allowedUsernames && u.allowedUsernames.some(un => un.toLowerCase() === input))
   );
 
   if (!user) {
@@ -346,7 +313,8 @@ export async function requestPasswordReset(email: string): Promise<{ success: bo
     }
   }
 
-  const user = ENTERPRISE_USERS.find((u) => u.email.toLowerCase() === trimmed);
+  const dynamicUsers = getEnterpriseUsers();
+  const user = dynamicUsers.find((u) => u.email.toLowerCase() === trimmed);
   if (!user) {
     return {
       success: false,

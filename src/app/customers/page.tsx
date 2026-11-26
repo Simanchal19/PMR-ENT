@@ -11,7 +11,8 @@ import {
   getCustomerOutstandingBills,
   reversePaymentAllocation,
   getStoredUserRole,
-  getBusinessProfile
+  getBusinessProfile,
+  updateCustomer
 } from "@/lib/storage";
 import PaymentAllocationModal from "@/components/payments/PaymentAllocationModal";
 import { Customer, Bill, Payment, SalesReturn, UserRole, BusinessProfile } from "@/lib/types";
@@ -21,7 +22,7 @@ import {
   Search, Plus, UserPlus, FileSpreadsheet, Eye, X, Check, Phone, MapPin, 
   Receipt, CreditCard, Printer, Download, ArrowDownRight, ArrowUpRight, 
   Loader2, Building2, CheckCircle2, ShieldCheck, AlertCircle,
-  Sparkles, Layers, RotateCcw, History, ArrowRight, Lock
+  Sparkles, Layers, RotateCcw, History, ArrowRight, Lock, Edit2
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -49,6 +50,49 @@ export default function CustomersPage() {
   const [newPhone, setNewPhone] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [newOpeningBalance, setNewOpeningBalance] = useState("0");
+
+  // Edit Customer Modal State (Admin / Owner)
+  const [showEditCustModal, setShowEditCustModal] = useState(false);
+  const [editCustData, setEditCustData] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    gstin: "",
+    opening_balance: "0",
+  });
+  const [editCustSuccess, setEditCustSuccess] = useState<string | null>(null);
+  const [editCustError, setEditCustError] = useState<string | null>(null);
+
+  const handleSaveCustomerEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomer) return;
+    const res = updateCustomer(
+      selectedCustomer.id,
+      {
+        name: editCustData.name,
+        phone: editCustData.phone,
+        address: editCustData.address,
+        gstin: editCustData.gstin,
+        opening_balance: parseFloat(editCustData.opening_balance) || 0,
+      },
+      userRole === "admin" ? "System Administrator (Admin)" : "Pramod Maharaj (Owner)"
+    );
+
+    if (!res.success) {
+      setEditCustError(res.error || "Failed to update customer.");
+      return;
+    }
+
+    if (res.customer) {
+      setSelectedCustomer(res.customer);
+    }
+    setEditCustSuccess("Customer details updated successfully!");
+    loadCustomers();
+    setTimeout(() => {
+      setShowEditCustModal(false);
+      setEditCustSuccess(null);
+    }, 1200);
+  };
 
   const loadCustomers = () => {
     const list = getCustomers();
@@ -501,13 +545,36 @@ export default function CustomersPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleOpenLedger(cust)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Ledger</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenLedger(cust)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ledger</span>
+                          </button>
+                          {(userRole === "admin" || userRole === "owner") && (
+                            <button
+                              onClick={() => {
+                                setSelectedCustomer(cust);
+                                setEditCustData({
+                                  name: cust.name,
+                                  phone: cust.phone || "",
+                                  address: cust.address || "",
+                                  gstin: cust.gstin || "",
+                                  opening_balance: String(cust.opening_balance || 0),
+                                });
+                                setEditCustError(null);
+                                setEditCustSuccess(null);
+                                setShowEditCustModal(true);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Edit Customer Profile (Admin / Owner)"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -552,14 +619,39 @@ export default function CustomersPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCustomer(null)}
-                    className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
-                    title="Close modal"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {(userRole === "admin" || userRole === "owner") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditCustData({
+                            name: selectedCustomer.name,
+                            phone: selectedCustomer.phone || "",
+                            address: selectedCustomer.address || "",
+                            gstin: selectedCustomer.gstin || "",
+                            opening_balance: String(selectedCustomer.opening_balance || 0),
+                          });
+                          setEditCustError(null);
+                          setEditCustSuccess(null);
+                          setShowEditCustModal(true);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white text-xs font-semibold flex items-center gap-1 border border-blue-500/30 transition-colors"
+                        title="Edit Customer Details (Admin / Owner)"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Edit Details</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCustomer(null)}
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
+                      title="Close modal"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Bottom Tier: View Switcher (Left) & Actions (Right) */}
@@ -1157,7 +1249,7 @@ export default function CustomersPage() {
                         </p>
                       </div>
                       <span className="text-[10px] text-slate-500">
-                        Role: <strong className="uppercase text-slate-800">{userRole}</strong> (Owner / Manager can reverse)
+                        Role: <strong className="uppercase text-slate-800">{userRole}</strong> (Admin, Owner &amp; Manager can reverse)
                       </span>
                     </div>
 
@@ -1189,7 +1281,7 @@ export default function CustomersPage() {
                                 <td className="py-2.5 px-3 text-slate-600 font-medium">{item.allocatedBy || "Pramod Maharaj (Owner)"}</td>
                                 <td className="py-2.5 px-3 text-slate-500 italic">{item.notes || "—"}</td>
                                 <td className="py-2.5 px-3 text-center">
-                                  {userRole === "owner" || userRole === "manager" ? (
+                                  {userRole === "owner" || userRole === "manager" || userRole === "admin" ? (
                                     reversingAllocId === item.allocationId ? (
                                       <div className="flex items-center justify-center gap-1 animate-in fade-in">
                                         <input
@@ -1332,6 +1424,135 @@ export default function CustomersPage() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
                 >
                   Save Customer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Customer Modal (Admin & Owner Full Control) */}
+      {showEditCustModal && selectedCustomer && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                  <Edit2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Edit Customer Profile</h3>
+                  <p className="text-[11px] text-slate-500">
+                    ID: <strong>{selectedCustomer.code || selectedCustomer.id}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditCustModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomerEdit} className="p-5 space-y-4 text-xs">
+              {editCustSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{editCustSuccess}</span>
+                </div>
+              )}
+              {editCustError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{editCustError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Customer / Party Legal Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editCustData.name}
+                  onChange={(e) => setEditCustData({ ...editCustData, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold text-slate-900 uppercase focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Mobile Phone
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 94370 12345"
+                    value={editCustData.phone}
+                    onChange={(e) => setEditCustData({ ...editCustData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    GSTIN (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="21AAAAA1234A1Z5"
+                    value={editCustData.gstin}
+                    onChange={(e) => setEditCustData({ ...editCustData, gstin: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono uppercase focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Site / Delivery Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Chikiti Pentho, Ganesh Nagar, Ganjam"
+                  value={editCustData.address}
+                  onChange={(e) => setEditCustData({ ...editCustData, address: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Opening Balance Baseline (₹)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="0.00"
+                  value={editCustData.opening_balance}
+                  onChange={(e) => setEditCustData({ ...editCustData, opening_balance: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Positive for outstanding debt (Dr), negative for opening advance credit (Cr).
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCustModal(false)}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs transition-colors"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

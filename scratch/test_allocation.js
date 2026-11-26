@@ -292,7 +292,7 @@ function runTests() {
     allocations: [{ bill_id: bill2.id, allocated_amount: 5000 }]
   });
   assert(unauthorizedAlloc.success === false, "Operator role blocked from allocating payments");
-  assert(unauthorizedAlloc.error.includes("Only Owner or Manager"), "Clear authorization error returned to operator");
+  assert(unauthorizedAlloc.error.includes("Only Owner, Manager or Admin") || unauthorizedAlloc.error.includes("Only Owner or Manager"), "Clear authorization error returned to operator");
 
   console.log(`\n=== ALL ${passed}/${total} TESTS PASSED SUCCESSFULLY! ===`);
 }

@@ -12,6 +12,13 @@ export interface AuthUser {
   isActive: boolean;
   avatarUrl?: string;
   lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EnterpriseUserRecord extends AuthUser {
+  passwordHash: string;
+  allowedUsernames: string[];
 }
 
 export interface AuthSession {

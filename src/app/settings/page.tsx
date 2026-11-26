@@ -13,6 +13,7 @@ import {
 import { UserRole, AuditLog, AuthUser, BusinessProfile } from "@/lib/types";
 import { getClientSession, signOutUser } from "@/lib/auth";
 import MasterCatalogSettingsSection from "@/components/admin/MasterCatalogSettingsSection";
+import UserManagementSection from "@/components/admin/UserManagementSection";
 
 export default function SettingsPage() {
   const [businessName, setBusinessName] = useState("");
@@ -66,7 +67,7 @@ export default function SettingsPage() {
   };
 
   const handleConfirmReset = () => {
-    if (role !== "owner") return;
+    if (role !== "owner" && role !== "admin") return;
     if (confirmText.trim().toUpperCase() !== "RESET") return;
     resetAllDataToSeed();
     window.location.href = "/";
@@ -192,6 +193,9 @@ export default function SettingsPage() {
         </div>
       </form>
 
+      {/* Admin User Accounts & Login Management Console */}
+      <UserManagementSection role={role} currentUser={currentUser} />
+
       {/* Admin Master Product & Catalogs Management Hub */}
       <MasterCatalogSettingsSection role={role} />
 
@@ -296,7 +300,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-200">
-            Owner Only
+            Admin &amp; Owner
           </span>
         </div>
 
@@ -311,7 +315,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            {role === "owner" ? (
+            {(role === "owner" || role === "admin") ? (
               !showResetConfirm && (
                 <button
                   type="button"
@@ -327,12 +331,12 @@ export default function SettingsPage() {
               )
             ) : (
               <div className="px-3 py-2 rounded-lg bg-slate-100 text-slate-500 font-semibold border border-slate-200 shrink-0">
-                Restricted to Owner role
+                Restricted to Admin &amp; Owner roles
               </div>
             )}
           </div>
 
-          {showResetConfirm && role === "owner" && (
+          {showResetConfirm && (role === "owner" || role === "admin") && (
             <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 space-y-3">
               <div className="flex items-start gap-2.5 text-rose-900">
                 <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />

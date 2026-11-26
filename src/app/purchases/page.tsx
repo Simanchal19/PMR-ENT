@@ -22,6 +22,7 @@ import {
   getRodSizes,
   getBusinessProfile,
   getStoredUserRole,
+  updateSupplier,
 } from "@/lib/storage";
 import {
   Supplier,
@@ -60,6 +61,7 @@ import {
   Phone,
   MapPin,
   Loader2,
+  Edit2,
 } from "lucide-react";
 
 export default function PurchasesPage() {
@@ -95,6 +97,28 @@ export default function PurchasesPage() {
   const [newSupAddress, setNewSupAddress] = useState("");
   const [newSupCategory, setNewSupCategory] = useState<"cement" | "rod" | "daily" | "all">("all");
   const [newSupOpening, setNewSupOpening] = useState("0");
+
+  // Edit Supplier Modal (Admin / Owner Full Control)
+  const [showEditSupplierModal, setShowEditSupplierModal] = useState(false);
+  const [editSupData, setEditSupData] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    gstin: string;
+    category: "cement" | "rod" | "daily" | "all";
+    opening_balance: string;
+  }>({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    gstin: "",
+    category: "all",
+    opening_balance: "0",
+  });
+  const [editSupSuccess, setEditSupSuccess] = useState<string | null>(null);
+  const [editSupError, setEditSupError] = useState<string | null>(null);
 
   // Record Supplier Payment Modal
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
@@ -239,6 +263,39 @@ export default function PurchasesPage() {
     setNewSupAddress("");
     setNewSupOpening("0");
     loadData();
+  };
+
+  const handleSaveSupplierEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSupplier) return;
+    const res = updateSupplier(
+      selectedSupplier.id,
+      {
+        name: editSupData.name.trim().toUpperCase(),
+        phone: editSupData.phone.trim(),
+        email: editSupData.email.trim(),
+        address: editSupData.address.trim(),
+        gstin: editSupData.gstin.trim().toUpperCase(),
+        category: editSupData.category,
+        opening_balance: parseFloat(editSupData.opening_balance) || 0,
+      },
+      role === "admin" ? "System Administrator (Admin)" : "Pramod Maharaj (Owner)"
+    );
+
+    if (!res.success) {
+      setEditSupError(res.error || "Failed to update supplier profile.");
+      return;
+    }
+
+    setEditSupSuccess("Supplier details updated successfully!");
+    loadData();
+    if (res.supplier) {
+      setSelectedSupplier(res.supplier);
+    }
+    setTimeout(() => {
+      setShowEditSupplierModal(false);
+      setEditSupSuccess(null);
+    }, 1200);
   };
 
   const handleRecordPayment = (e: React.FormEvent) => {
@@ -877,6 +934,30 @@ export default function PurchasesPage() {
                       </td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
+                          {(role === "admin" || role === "owner") && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSupplier(sup);
+                                setEditSupData({
+                                  name: sup.name,
+                                  phone: sup.phone || "",
+                                  email: sup.email || "",
+                                  address: sup.address || "",
+                                  gstin: sup.gstin || "",
+                                  category: sup.supply_category,
+                                  opening_balance: (sup.opening_balance || 0).toString(),
+                                });
+                                setEditSupError(null);
+                                setEditSupSuccess(null);
+                                setShowEditSupplierModal(true);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Edit Supplier Profile (Admin / Owner)"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -1247,6 +1328,32 @@ export default function PurchasesPage() {
                     Bill Allocations
                   </button>
                 </div>
+
+                {(role === "admin" || role === "owner") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedSupplier) return;
+                      setEditSupData({
+                        name: selectedSupplier.name,
+                        phone: selectedSupplier.phone || "",
+                        email: selectedSupplier.email || "",
+                        address: selectedSupplier.address || "",
+                        gstin: selectedSupplier.gstin || "",
+                        category: selectedSupplier.supply_category,
+                        opening_balance: (selectedSupplier.opening_balance || 0).toString(),
+                      });
+                      setEditSupError(null);
+                      setEditSupSuccess(null);
+                      setShowEditSupplierModal(true);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white text-xs font-semibold flex items-center gap-1 border border-blue-500/30 transition-colors"
+                    title="Edit Supplier Details (Admin / Owner)"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Edit Details</span>
+                  </button>
+                )}
 
                 {ledgerTab === "statement" && (
                   <>
@@ -2237,6 +2344,139 @@ export default function PurchasesPage() {
                   className="px-4 py-2 rounded-lg bg-slate-900 text-white font-bold"
                 >
                   Save Supplier
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Supplier Modal (Admin & Owner Full Control) */}
+      {showEditSupplierModal && selectedSupplier && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                  <Edit2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Edit Supplier Profile</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Update profile, category, contact, & opening payable
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditSupplierModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSupplierEdit} className="p-5 space-y-4 text-xs">
+              {editSupSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{editSupSuccess}</span>
+                </div>
+              )}
+              {editSupError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{editSupError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Supplier / Company Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editSupData.name}
+                  onChange={(e) => setEditSupData({ ...editSupData, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-bold uppercase"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editSupData.phone}
+                    onChange={(e) => setEditSupData({ ...editSupData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">GSTIN Number</label>
+                  <input
+                    type="text"
+                    value={editSupData.gstin}
+                    onChange={(e) => setEditSupData({ ...editSupData, gstin: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono uppercase"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Supply Category</label>
+                  <select
+                    value={editSupData.category}
+                    onChange={(e) => setEditSupData({ ...editSupData, category: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="cement">Cement</option>
+                    <option value="rod">Rod / Steel</option>
+                    <option value="daily">Electrical & Hardware</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Opening Payable (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editSupData.opening_balance}
+                    onChange={(e) =>
+                      setEditSupData({ ...editSupData, opening_balance: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-bold text-rose-600"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Address / Location</label>
+                <input
+                  type="text"
+                  value={editSupData.address}
+                  onChange={(e) => setEditSupData({ ...editSupData, address: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditSupplierModal(false)}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs transition-colors"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
