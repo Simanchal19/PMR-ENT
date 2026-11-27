@@ -238,20 +238,20 @@ export default function SalesPage() {
                       <div className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setSelectedBill(bill)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                           title="View Invoice"
+                          aria-label={`View Invoice ${bill.bill_number}`}
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>View</span>
+                          <Eye className="w-4 h-4" />
                         </button>
                         {bill.status !== "voided" && (
                           <Link
                             href={`/sales/new?edit=${bill.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs transition-colors"
+                            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
                             title="Edit Invoice"
+                            aria-label={`Edit Invoice ${bill.bill_number}`}
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
-                            <span>Edit</span>
+                            <Edit2 className="w-4 h-4" />
                           </Link>
                         )}
                         <button
@@ -259,11 +259,11 @@ export default function SalesPage() {
                             setDeleteError(null);
                             setBillToDelete(bill);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition-colors"
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors"
                           title="Delete Invoice"
+                          aria-label={`Delete Invoice ${bill.bill_number}`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete</span>
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
