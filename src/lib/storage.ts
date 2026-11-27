@@ -2829,9 +2829,22 @@ export function calculateInventoryStock(): {
       .filter(r => r.item_type === "CEMENT" && r.brand_or_size?.toUpperCase() === bName)
       .reduce((s, r) => s + (r.qty || 0), 0);
 
-    const soldQty = sBills
-      .filter(b => b.bill_category === "cement" && b.cement_details?.cement_type?.toUpperCase() === bName)
-      .reduce((s, b) => s + (b.cement_details?.qty_bags || 0), 0);
+    const soldQty = sBills.reduce((acc, b) => {
+      if (b.bill_category !== "cement") return acc;
+      if (b.items && b.items.length > 0) {
+        const matching = b.items.filter(
+          it => it.item_category === "cement" &&
+          (it.item_name.toUpperCase().startsWith(bName) || it.item_name.toUpperCase().includes(bName))
+        );
+        if (matching.length > 0) {
+          return acc + matching.reduce((sum, it) => sum + (it.quantity || 0), 0);
+        }
+      }
+      if (b.cement_details?.cement_type?.toUpperCase() === bName) {
+        return acc + (b.cement_details.qty_bags || 0);
+      }
+      return acc;
+    }, 0);
 
     // Estimate returned bags from sales returns if reason/item mentions the brand
     const salesReturnQty = sReturns
@@ -2881,9 +2894,22 @@ export function calculateInventoryStock(): {
       .filter(r => r.item_type === "ROD" && r.brand_or_size?.toLowerCase() === rName)
       .reduce((s, r) => s + (r.qty || 0), 0);
 
-    const soldQty = sBills
-      .filter(b => b.bill_category === "rod" && b.rod_details?.rod_size?.toLowerCase() === rName)
-      .reduce((s, b) => s + (b.rod_details?.qty_kg || 0), 0);
+    const soldQty = sBills.reduce((acc, b) => {
+      if (b.bill_category !== "rod") return acc;
+      if (b.items && b.items.length > 0) {
+        const matching = b.items.filter(
+          it => it.item_category === "rod" &&
+          it.item_name.toLowerCase().includes(rName)
+        );
+        if (matching.length > 0) {
+          return acc + matching.reduce((sum, it) => sum + (it.quantity || 0), 0);
+        }
+      }
+      if (b.rod_details?.rod_size?.toLowerCase() === rName) {
+        return acc + (b.rod_details.qty_kg || 0);
+      }
+      return acc;
+    }, 0);
 
     const salesReturnQty = sReturns
       .filter(r => r.item_type === "ROD" && (r.reason || "").toLowerCase().includes(rName))

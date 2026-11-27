@@ -205,19 +205,33 @@ export default function CustomersPage() {
     for (const b of customerBills) {
       let goodsDescription = "";
       if (b.bill_category === "cement") {
-        const type = b.cement_details?.cement_type || "Cement";
-        const bags = b.cement_details?.qty_bags || 0;
-        const rate = b.cement_details?.unit_rate || 0;
-        goodsDescription = bags > 0 
-          ? `${type} Cement — ${bags} Bags @ ${formatCurrency(rate)}/bag` 
-          : `${type} Cement Supply`;
+        const cItems = (b.items || []).filter(it => it.item_category === "cement");
+        if (cItems.length > 1) {
+          goodsDescription = cItems
+            .map(it => `${it.item_name} — ${it.quantity} Bags @ ${formatCurrency(it.unit_price)}/bag`)
+            .join("; ");
+        } else {
+          const type = b.cement_details?.cement_type || "Cement";
+          const bags = b.cement_details?.qty_bags || (cItems[0]?.quantity || 0);
+          const rate = b.cement_details?.unit_rate || (cItems[0]?.unit_price || 0);
+          goodsDescription = bags > 0 
+            ? `${type} Cement — ${bags} Bags @ ${formatCurrency(rate)}/bag` 
+            : `${type} Cement Supply`;
+        }
       } else if (b.bill_category === "rod") {
-        const size = b.rod_details?.rod_size || "Steel";
-        const kg = b.rod_details?.qty_kg || 0;
-        const rate = b.rod_details?.rate_per_kg || 0;
-        goodsDescription = kg > 0 
-          ? `TMT Steel Rod ${size} — ${kg.toFixed(2)} Kg @ ${formatCurrency(rate)}/kg` 
-          : `TMT Steel Rod Supply`;
+        const rItems = (b.items || []).filter(it => it.item_category === "rod");
+        if (rItems.length > 1) {
+          goodsDescription = rItems
+            .map(it => `${it.item_name} — ${Number(it.quantity || 0).toFixed(2)} Kg @ ${formatCurrency(it.unit_price)}/kg`)
+            .join("; ");
+        } else {
+          const size = b.rod_details?.rod_size || "Steel";
+          const kg = b.rod_details?.qty_kg || (rItems[0]?.quantity || 0);
+          const rate = b.rod_details?.rate_per_kg || (rItems[0]?.unit_price || 0);
+          goodsDescription = kg > 0 
+            ? `TMT Steel Rod ${size} — ${kg.toFixed(2)} Kg @ ${formatCurrency(rate)}/kg` 
+            : `TMT Steel Rod Supply`;
+        }
       } else {
         if (b.items && b.items.length > 0) {
           goodsDescription = b.items.map(it => `${it.item_name} (Qty: ${it.quantity})`).join(", ");

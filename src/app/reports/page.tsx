@@ -146,7 +146,7 @@ export default function ReportsPage() {
       (b) =>
         b.status === "posted" &&
         b.bill_category === "cement" &&
-        b.cement_details &&
+        (b.cement_details || (b.items && b.items.length > 0)) &&
         isDateInRange(b.bill_date, period)
     );
     const stats: Record<string, { bags: number; amount: number }> = {};
@@ -154,16 +154,37 @@ export default function ReportsPage() {
     let totalRevenue = 0;
 
     for (const b of cementBills) {
-      const brand = b.cement_details.cement_type || "OTHER";
-      if (!stats[brand]) {
-        stats[brand] = { bags: 0, amount: 0 };
+      if (b.items && b.items.length > 0) {
+        const cementItems = (b.items || []).filter((it: any) => it.item_category === "cement");
+        if (cementItems.length > 0) {
+          for (const it of cementItems) {
+            const brand = it.item_name.replace(/\s*Cement$/i, "").trim().toUpperCase() || "OTHER";
+            if (!stats[brand]) {
+              stats[brand] = { bags: 0, amount: 0 };
+            }
+            const bags = it.quantity || 0;
+            const amount = it.total_amount || 0;
+            stats[brand].bags += bags;
+            stats[brand].amount += amount;
+            totalBags += bags;
+            totalRevenue += amount;
+          }
+          continue;
+        }
       }
-      const bags = b.cement_details.qty_bags || 0;
-      const amount = b.cement_details.amount || 0;
-      stats[brand].bags += bags;
-      stats[brand].amount += amount;
-      totalBags += bags;
-      totalRevenue += amount;
+
+      if (b.cement_details) {
+        const brand = b.cement_details.cement_type || "OTHER";
+        if (!stats[brand]) {
+          stats[brand] = { bags: 0, amount: 0 };
+        }
+        const bags = b.cement_details.qty_bags || 0;
+        const amount = b.cement_details.amount || 0;
+        stats[brand].bags += bags;
+        stats[brand].amount += amount;
+        totalBags += bags;
+        totalRevenue += amount;
+      }
     }
 
     const avgRate = totalBags > 0 ? totalRevenue / totalBags : 0;

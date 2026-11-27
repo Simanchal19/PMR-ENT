@@ -48,15 +48,33 @@ export default function CreateBillPage() {
   const [notes, setNotes] = useState("");
   const [successBill, setSuccessBill] = useState<Bill | null>(null);
 
-  // Cement Fields - Default to blank for manual entry
-  const [cementType, setCementType] = useState("LNT");
-  const [cementBags, setCementBags] = useState("");
-  const [cementRate, setCementRate] = useState("");
+  // Cement Line Item Interface
+  interface CementItemInput {
+    id: string;
+    brand: string;
+    bags: string;
+    rate: string;
+    amount: number;
+  }
 
-  // Rod Fields - Default to blank for manual entry
-  const [rodSize, setRodSize] = useState("10mm");
-  const [rodKg, setRodKg] = useState("");
-  const [rodRate, setRodRate] = useState("");
+  // Rod Line Item Interface
+  interface RodItemInput {
+    id: string;
+    size: string;
+    kg: string;
+    rate: string;
+    amount: number;
+  }
+
+  // Cement Fields - Multi-item list
+  const [cementItems, setCementItems] = useState<CementItemInput[]>([
+    { id: "c-1", brand: "LNT", bags: "", rate: "", amount: 0 }
+  ]);
+
+  // Rod Fields - Multi-item list
+  const [rodItems, setRodItems] = useState<RodItemInput[]>([
+    { id: "r-1", size: "10mm", kg: "", rate: "", amount: 0 }
+  ]);
 
   // Dynamic Master Catalogs (Admin Configurable)
   const [cementBrands, setCementBrands] = useState<CementBrand[]>([]);
@@ -95,19 +113,31 @@ export default function CreateBillPage() {
       setHardwareItems(hList);
 
       const activeB = bList.filter(b => b.isActive);
-      if (activeB.length > 0 && !activeB.some(b => b.name === cementType)) {
-        setCementType(activeB[0].name);
-        if (activeB[0].defaultRate && !cementRate) {
-          setCementRate(String(activeB[0].defaultRate));
-        }
+      if (activeB.length > 0) {
+        setCementItems(prev => {
+          if (prev.length === 1 && !prev[0].bags && !prev[0].rate) {
+            return [{
+              ...prev[0],
+              brand: activeB[0].name,
+              rate: activeB[0].defaultRate ? String(activeB[0].defaultRate) : ""
+            }];
+          }
+          return prev;
+        });
       }
 
       const activeS = sList.filter(s => s.isActive);
-      if (activeS.length > 0 && !activeS.some(s => s.size === rodSize)) {
-        setRodSize(activeS[0].size);
-        if (activeS[0].defaultRate && !rodRate) {
-          setRodRate(String(activeS[0].defaultRate));
-        }
+      if (activeS.length > 0) {
+        setRodItems(prev => {
+          if (prev.length === 1 && !prev[0].kg && !prev[0].rate) {
+            return [{
+              ...prev[0],
+              size: activeS[0].size,
+              rate: activeS[0].defaultRate ? String(activeS[0].defaultRate) : ""
+            }];
+          }
+          return prev;
+        });
       }
 
       const session = getClientSession();
@@ -129,25 +159,89 @@ export default function CreateBillPage() {
     return () => window.removeEventListener("tpm_data_updated", loadCatalogs);
   }, []);
 
-  const handleCementBrandChange = (newBrandName: string) => {
-    setCementType(newBrandName);
-    const brand = cementBrands.find(b => b.name === newBrandName);
-    if (brand && brand.defaultRate) {
-      const currentNum = parseFloat(cementRate);
-      if (!cementRate || currentNum === 0 || cementBrands.some(b => b.defaultRate === currentNum)) {
-        setCementRate(String(brand.defaultRate));
+  const handleCementItemChange = (index: number, field: "brand" | "bags" | "rate", value: string) => {
+    const updated = [...cementItems];
+    const item = { ...updated[index], [field]: value };
+
+    if (field === "brand") {
+      const brand = cementBrands.find(b => b.name === value);
+      if (brand && brand.defaultRate) {
+        const currentRate = parseFloat(item.rate);
+        if (!item.rate || currentRate === 0 || cementBrands.some(b => b.defaultRate === currentRate)) {
+          item.rate = String(brand.defaultRate);
+        }
       }
+    }
+
+    const bags = parseFloat(field === "bags" ? value : item.bags) || 0;
+    const rate = parseFloat(field === "rate" ? value : item.rate) || 0;
+    item.amount = bags * rate;
+    updated[index] = item;
+    setCementItems(updated);
+  };
+
+  const handleAddCementItem = () => {
+    const activeB = cementBrands.filter(b => b.isActive);
+    const defaultBrand = activeB[0]?.name || "LNT";
+    const defaultRate = activeB[0]?.defaultRate ? String(activeB[0].defaultRate) : "";
+    setCementItems(prev => [
+      ...prev,
+      {
+        id: `c-${Date.now()}-${prev.length + 1}`,
+        brand: defaultBrand,
+        bags: "",
+        rate: defaultRate,
+        amount: 0
+      }
+    ]);
+  };
+
+  const handleRemoveCementItem = (index: number) => {
+    if (cementItems.length > 1) {
+      setCementItems(prev => prev.filter((_, i) => i !== index));
     }
   };
 
-  const handleRodSizeChange = (newSizeName: string) => {
-    setRodSize(newSizeName);
-    const s = rodSizes.find(r => r.size === newSizeName);
-    if (s && s.defaultRate) {
-      const currentNum = parseFloat(rodRate);
-      if (!rodRate || currentNum === 0 || rodSizes.some(r => r.defaultRate === currentNum)) {
-        setRodRate(String(s.defaultRate));
+  const handleRodItemChange = (index: number, field: "size" | "kg" | "rate", value: string) => {
+    const updated = [...rodItems];
+    const item = { ...updated[index], [field]: value };
+
+    if (field === "size") {
+      const s = rodSizes.find(r => r.size === value);
+      if (s && s.defaultRate) {
+        const currentRate = parseFloat(item.rate);
+        if (!item.rate || currentRate === 0 || rodSizes.some(r => r.defaultRate === currentRate)) {
+          item.rate = String(s.defaultRate);
+        }
       }
+    }
+
+    const kg = parseFloat(field === "kg" ? value : item.kg) || 0;
+    const rate = parseFloat(field === "rate" ? value : item.rate) || 0;
+    item.amount = kg * rate;
+    updated[index] = item;
+    setRodItems(updated);
+  };
+
+  const handleAddRodItem = () => {
+    const activeS = rodSizes.filter(s => s.isActive);
+    const defaultSize = activeS[0]?.size || "10mm";
+    const defaultRate = activeS[0]?.defaultRate ? String(activeS[0].defaultRate) : "";
+    setRodItems(prev => [
+      ...prev,
+      {
+        id: `r-${Date.now()}-${prev.length + 1}`,
+        size: defaultSize,
+        kg: "",
+        rate: defaultRate,
+        amount: 0
+      }
+    ]);
+  };
+
+  const handleRemoveRodItem = (index: number) => {
+    if (rodItems.length > 1) {
+      setRodItems(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -163,8 +257,12 @@ export default function CreateBillPage() {
   }, []);
 
   // Compute Totals dynamically from user input
-  const cementTotal = (parseFloat(cementBags) || 0) * (parseFloat(cementRate) || 0);
-  const rodTotal = (parseFloat(rodKg) || 0) * (parseFloat(rodRate) || 0);
+  const cementTotal = cementItems.reduce((acc, it) => acc + (it.amount || 0), 0);
+  const totalCementBags = cementItems.reduce((acc, it) => acc + (parseFloat(it.bags) || 0), 0);
+
+  const rodTotal = rodItems.reduce((acc, it) => acc + (it.amount || 0), 0);
+  const totalRodKg = rodItems.reduce((acc, it) => acc + (parseFloat(it.kg) || 0), 0);
+
   const dailyTotal = dailyItems.reduce((acc, it) => acc + (it.amount || 0), 0);
 
   const goodsSubtotal = category === "cement" ? cementTotal : category === "rod" ? rodTotal : dailyTotal;
@@ -298,10 +396,22 @@ export default function CreateBillPage() {
     setSelectedCustomerId("");
     setCustomerSearch("");
     setIsDropdownOpen(false);
-    setCementBags("");
-    setCementRate("");
-    setRodKg("");
-    setRodRate("");
+    const activeB = cementBrands.filter(b => b.isActive);
+    setCementItems([{
+      id: "c-1",
+      brand: activeB[0]?.name || "LNT",
+      bags: "",
+      rate: activeB[0]?.defaultRate ? String(activeB[0].defaultRate) : "",
+      amount: 0
+    }]);
+    const activeS = rodSizes.filter(s => s.isActive);
+    setRodItems([{
+      id: "r-1",
+      size: activeS[0]?.size || "10mm",
+      kg: "",
+      rate: activeS[0]?.defaultRate ? String(activeS[0].defaultRate) : "",
+      amount: 0
+    }]);
     setDailyItems([{ name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
     setLabourCost("");
     setTransportCost("");
@@ -332,43 +442,77 @@ export default function CreateBillPage() {
     let daily_details = undefined;
 
     if (category === "cement") {
-      const bags = parseFloat(cementBags) || 0;
-      const rate = parseFloat(cementRate) || 0;
-      items.push({
-        id: `item-${Date.now()}-1`,
-        bill_id: "",
-        item_name: `${cementType} Cement`,
-        item_category: "cement",
-        quantity: bags,
-        unit: "BAGS",
-        unit_price: rate,
-        total_amount: cementTotal
-      });
+      const validCementItems = cementItems.filter(it => (parseFloat(it.bags) || 0) > 0 || (it.amount || 0) > 0);
+      if (validCementItems.length === 0) {
+        alert("Please enter quantity and rate for at least one cement item.");
+        return;
+      }
+
+      for (let idx = 0; idx < validCementItems.length; idx++) {
+        const it = validCementItems[idx];
+        const bags = parseFloat(it.bags) || 0;
+        const rate = parseFloat(it.rate) || 0;
+        const amt = bags * rate;
+        items.push({
+          id: `item-${Date.now()}-${idx + 1}`,
+          bill_id: "",
+          item_name: `${it.brand} Cement`,
+          item_category: "cement",
+          quantity: bags,
+          unit: "BAGS",
+          unit_price: rate,
+          total_amount: amt
+        });
+      }
+
+      const totalBags = validCementItems.reduce((acc, it) => acc + (parseFloat(it.bags) || 0), 0);
+      const totalAmt = validCementItems.reduce((acc, it) => acc + (it.amount || 0), 0);
+      const avgRate = totalBags > 0 ? Number((totalAmt / totalBags).toFixed(2)) : 0;
+
       cement_details = {
-        cement_type: cementType,
-        qty_bags: bags,
-        unit_rate: rate,
-        amount: cementTotal,
+        cement_type: validCementItems.length === 1 
+          ? validCementItems[0].brand 
+          : validCementItems.map(it => `${it.brand} (${it.bags})`).join(", "),
+        qty_bags: totalBags,
+        unit_rate: avgRate,
+        amount: totalAmt,
         legacy_paid_flag: "NO" as const
       };
     } else if (category === "rod") {
-      const kg = parseFloat(rodKg) || 0;
-      const rate = parseFloat(rodRate) || 0;
-      items.push({
-        id: `item-${Date.now()}-1`,
-        bill_id: "",
-        item_name: `TMT Steel Rod ${rodSize}`,
-        item_category: "rod",
-        quantity: kg,
-        unit: "KG",
-        unit_price: rate,
-        total_amount: rodTotal
-      });
+      const validRodItems = rodItems.filter(it => (parseFloat(it.kg) || 0) > 0 || (it.amount || 0) > 0);
+      if (validRodItems.length === 0) {
+        alert("Please enter quantity and rate for at least one rod item.");
+        return;
+      }
+
+      for (let idx = 0; idx < validRodItems.length; idx++) {
+        const it = validRodItems[idx];
+        const kg = parseFloat(it.kg) || 0;
+        const rate = parseFloat(it.rate) || 0;
+        const amt = kg * rate;
+        items.push({
+          id: `item-${Date.now()}-${idx + 1}`,
+          bill_id: "",
+          item_name: `TMT Steel Rod ${it.size}`,
+          item_category: "rod",
+          quantity: kg,
+          unit: "KG",
+          unit_price: rate,
+          total_amount: amt
+        });
+      }
+
+      const totalKg = validRodItems.reduce((acc, it) => acc + (parseFloat(it.kg) || 0), 0);
+      const totalAmt = validRodItems.reduce((acc, it) => acc + (it.amount || 0), 0);
+      const avgRate = totalKg > 0 ? Number((totalAmt / totalKg).toFixed(2)) : 0;
+
       rod_details = {
-        rod_size: rodSize,
-        qty_kg: kg,
-        rate_per_kg: rate,
-        amount: rodTotal
+        rod_size: validRodItems.length === 1 
+          ? validRodItems[0].size 
+          : validRodItems.map(it => `${it.size} (${it.kg}kg)`).join(", "),
+        qty_kg: totalKg,
+        rate_per_kg: avgRate,
+        amount: totalAmt
       };
     } else {
       const validItems = dailyItems.filter(it => it.name.trim() || it.amount > 0);
@@ -470,6 +614,21 @@ export default function CreateBillPage() {
           <p className="text-xs text-slate-600 max-w-md mx-auto">
             Total amount of {formatCurrency(successBill.total_amount)} has been billed to {successBill.customer_name} and updated in their customer ledger.
           </p>
+          <div className="max-w-md mx-auto p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-left space-y-2">
+            <div className="font-bold text-slate-700 text-[11px] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
+              <span>Billed Items ({successBill.items.length})</span>
+              <span>Amount</span>
+            </div>
+            {successBill.items.map((it, idx) => (
+              <div key={idx} className="flex justify-between items-center text-slate-700">
+                <span className="font-medium">
+                  {it.item_name} <span className="text-slate-400 font-normal">({it.quantity} {it.unit} @ {formatCurrency(it.unit_price)})</span>
+                </span>
+                <span className="font-bold text-slate-900">{formatCurrency(it.total_amount)}</span>
+              </div>
+            ))}
+          </div>
+
           {(successBill.labour_amount || successBill.transport_amount) ? (
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 font-medium pt-1">
               <span>Goods: <strong className="text-slate-800">{formatCurrency(successBill.subtotal)}</strong></span>
@@ -711,72 +870,145 @@ export default function CreateBillPage() {
             {/* Category Form Details */}
             {category === "cement" && (
               <div className="p-4 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-                    Cement Specifications (Manual Entry)
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-emerald-200/70">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                      Cement Specifications (Manual Entry)
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      {cementItems.length} {cementItems.length === 1 ? "Brand" : "Brands"}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-emerald-700 font-medium">Bags × Rate = Invoice Total</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-emerald-700 font-medium hidden sm:inline">
+                      Bags × Rate = Line Total
+                    </span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCementModal(true)}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded transition-colors"
+                        title="Admin: Edit, Add or Remove Cement Brands"
+                      >
+                        <Settings2 className="w-3 h-3" />
+                        <span>Manage Brands</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-medium text-slate-700">
-                        Cement Brand <span className="text-rose-500">*</span>
-                      </label>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setShowCementModal(true)}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded transition-colors"
-                          title="Admin: Edit, Add or Remove Cement Brands"
-                        >
-                          <Settings2 className="w-3 h-3" />
-                          <span>Manage Brands</span>
-                        </button>
-                      )}
-                    </div>
-                    <select
-                      value={cementType}
-                      onChange={(e) => handleCementBrandChange(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-semibold"
+
+                <div className="space-y-3">
+                  {cementItems.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className="p-3.5 rounded-xl bg-white border border-emerald-200 shadow-2xs space-y-3"
                     >
-                      {cementBrands
-                        .filter((b) => b.isActive || b.name === cementType)
-                        .map((b) => (
-                          <option key={b.id} value={b.name}>
-                            {b.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Quantity (Bags) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      placeholder="e.g. 50"
-                      value={cementBags}
-                      onChange={(e) => setCementBags(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Unit Rate per Bag (₹) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      required
-                      placeholder="e.g. 340"
-                      value={cementRate}
-                      onChange={(e) => setCementRate(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">
+                            {index + 1}
+                          </span>
+                          <span>Cement Item #{index + 1}</span>
+                        </span>
+                        {cementItems.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCementItem(index)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
+                            title="Remove this item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Remove</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Cement Brand <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={item.brand}
+                            onChange={(e) => handleCementItemChange(index, "brand", e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          >
+                            {cementBrands
+                              .filter((b) => b.isActive || b.name === item.brand)
+                              .map((b) => (
+                                <option key={b.id} value={b.name}>
+                                  {b.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Quantity (Bags) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            required
+                            placeholder="e.g. 50"
+                            value={item.bags}
+                            onChange={(e) => handleCementItemChange(index, "bags", e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Unit Rate per Bag (₹) <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min="1"
+                              required
+                              placeholder="e.g. 340"
+                              value={item.rate}
+                              onChange={(e) => handleCementItemChange(index, "rate", e.target.value)}
+                              className="w-full pl-6 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Item Total (₹)
+                          </label>
+                          <div className="w-full px-3 py-2 text-xs rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 font-black flex items-center justify-between">
+                            <span>₹</span>
+                            <span>{formatCurrency(item.amount, false)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Another Cement Item + Subtotal Summary */}
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-emerald-200/80">
+                  <button
+                    type="button"
+                    onClick={handleAddCementItem}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors self-start"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Add Another Cement Brand / Item</span>
+                  </button>
+
+                  <div className="text-right text-xs text-emerald-950 font-semibold bg-emerald-100/70 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between sm:justify-end gap-3">
+                    <span>Total: <strong className="font-black text-emerald-900">{totalCementBags} Bags</strong></span>
+                    <span className="text-emerald-400">|</span>
+                    <span>Cement Subtotal: <strong className="font-black text-emerald-900">{formatCurrency(cementTotal)}</strong></span>
                   </div>
                 </div>
               </div>
@@ -784,73 +1016,145 @@ export default function CreateBillPage() {
 
             {category === "rod" && (
               <div className="p-4 rounded-xl bg-amber-50/40 border border-amber-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-amber-900 uppercase tracking-wider">
-                    Rod / Steel Specifications (Manual Entry)
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-amber-200/70">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                      Rod / Steel Specifications (Manual Entry)
+                    </span>
+                    <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                      {rodItems.length} {rodItems.length === 1 ? "Size" : "Sizes"}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-amber-700 font-medium">Kg × Rate/Kg = Invoice Total</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-amber-700 font-medium hidden sm:inline">
+                      Kg × Rate/Kg = Line Total
+                    </span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => setShowRodModal(true)}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded transition-colors"
+                        title="Admin: Edit, Add or Remove Rod Sizes & Rates"
+                      >
+                        <Settings2 className="w-3 h-3" />
+                        <span>Manage Sizes</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-medium text-slate-700">
-                        Rod Size <span className="text-rose-500">*</span>
-                      </label>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setShowRodModal(true)}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded transition-colors"
-                          title="Admin: Edit, Add or Remove Rod Sizes & Rates"
-                        >
-                          <Settings2 className="w-3 h-3" />
-                          <span>Manage Sizes</span>
-                        </button>
-                      )}
-                    </div>
-                    <select
-                      value={rodSize}
-                      onChange={(e) => handleRodSizeChange(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-semibold"
+
+                <div className="space-y-3">
+                  {rodItems.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className="p-3.5 rounded-xl bg-white border border-amber-200 shadow-2xs space-y-3"
                     >
-                      {rodSizes
-                        .filter((s) => s.isActive || s.size === rodSize)
-                        .map((s) => (
-                          <option key={s.id} value={s.size}>
-                            {s.size}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Quantity (Kg) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0.1"
-                      required
-                      placeholder="e.g. 150.5"
-                      value={rodKg}
-                      onChange={(e) => setRodKg(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Rate per Kg (₹) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="1"
-                      required
-                      placeholder="e.g. 68.00"
-                      value={rodRate}
-                      onChange={(e) => setRodRate(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                    />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">
+                            {index + 1}
+                          </span>
+                          <span>Rod / Steel Item #{index + 1}</span>
+                        </span>
+                        {rodItems.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRodItem(index)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
+                            title="Remove this item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Remove</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Rod Size <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={item.size}
+                            onChange={(e) => handleRodItemChange(index, "size", e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                          >
+                            {rodSizes
+                              .filter((s) => s.isActive || s.size === item.size)
+                              .map((s) => (
+                                <option key={s.id} value={s.size}>
+                                  {s.size}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Quantity (Kg) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0.1"
+                            required
+                            placeholder="e.g. 21"
+                            value={item.kg}
+                            onChange={(e) => handleRodItemChange(index, "kg", e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Rate per Kg (₹) <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="1"
+                              required
+                              placeholder="e.g. 120"
+                              value={item.rate}
+                              onChange={(e) => handleRodItemChange(index, "rate", e.target.value)}
+                              className="w-full pl-6 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Item Total (₹)
+                          </label>
+                          <div className="w-full px-3 py-2 text-xs rounded-lg bg-amber-50 border border-amber-200 text-amber-950 font-black flex items-center justify-between">
+                            <span>₹</span>
+                            <span>{formatCurrency(item.amount, false)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Another Rod Item + Subtotal Summary */}
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-amber-200/80">
+                  <button
+                    type="button"
+                    onClick={handleAddRodItem}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors self-start"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Add Another Rod Size / Item</span>
+                  </button>
+
+                  <div className="text-right text-xs text-amber-950 font-semibold bg-amber-100/70 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-between sm:justify-end gap-3">
+                    <span>Total: <strong className="font-black text-amber-900">{totalRodKg.toFixed(2)} Kg</strong></span>
+                    <span className="text-amber-400">|</span>
+                    <span>Rod Subtotal: <strong className="font-black text-amber-900">{formatCurrency(rodTotal)}</strong></span>
                   </div>
                 </div>
               </div>
@@ -1244,16 +1548,40 @@ export default function CreateBillPage() {
         isOpen={showCementModal}
         onClose={() => setShowCementModal(false)}
         onBrandCreated={(b) => {
-          setCementType(b.name);
-          if (b.defaultRate) setCementRate(String(b.defaultRate));
+          setCementItems((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            const rate = b.defaultRate ? String(b.defaultRate) : last.rate;
+            const bags = parseFloat(last.bags) || 0;
+            const r = parseFloat(rate) || 0;
+            updated[updated.length - 1] = {
+              ...last,
+              brand: b.name,
+              rate,
+              amount: bags * r,
+            };
+            return updated;
+          });
         }}
       />
       <RodSizeManagerModal
         isOpen={showRodModal}
         onClose={() => setShowRodModal(false)}
         onSizeCreated={(s) => {
-          setRodSize(s.size);
-          if (s.defaultRate) setRodRate(String(s.defaultRate));
+          setRodItems((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            const rate = s.defaultRate ? String(s.defaultRate) : last.rate;
+            const kg = parseFloat(last.kg) || 0;
+            const r = parseFloat(rate) || 0;
+            updated[updated.length - 1] = {
+              ...last,
+              size: s.size,
+              rate,
+              amount: kg * r,
+            };
+            return updated;
+          });
         }}
       />
     </div>

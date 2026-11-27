@@ -131,10 +131,32 @@ export default function SalesPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-600">
-                      {bill.cement_details ? (
-                        <span>{bill.cement_details.qty_bags} Bags • {bill.cement_details.cement_type} (₹{bill.cement_details.unit_rate}/bag)</span>
-                      ) : bill.rod_details ? (
-                        <span>{bill.rod_details.qty_kg} Kg • {bill.rod_details.rod_size} (₹{bill.rod_details.rate_per_kg}/kg)</span>
+                      {bill.bill_category === "cement" ? (
+                        bill.items && bill.items.filter(it => it.item_category === "cement").length > 1 ? (
+                          <span>
+                            {bill.items
+                              .filter(it => it.item_category === "cement")
+                              .map(it => `${it.quantity} Bags ${it.item_name}`)
+                              .join(" • ")}
+                          </span>
+                        ) : bill.cement_details ? (
+                          <span>{bill.cement_details.qty_bags} Bags • {bill.cement_details.cement_type} (₹{bill.cement_details.unit_rate}/bag)</span>
+                        ) : (
+                          <span>Cement Supply</span>
+                        )
+                      ) : bill.bill_category === "rod" ? (
+                        bill.items && bill.items.filter(it => it.item_category === "rod").length > 1 ? (
+                          <span>
+                            {bill.items
+                              .filter(it => it.item_category === "rod")
+                              .map(it => `${it.quantity} Kg ${it.item_name}`)
+                              .join(" • ")}
+                          </span>
+                        ) : bill.rod_details ? (
+                          <span>{bill.rod_details.qty_kg} Kg • {bill.rod_details.rod_size} (₹{bill.rod_details.rate_per_kg}/kg)</span>
+                        ) : (
+                          <span>Rod / Steel Supply</span>
+                        )
                       ) : (
                         <span>{bill.items[0]?.item_name || "Electrical Goods"}</span>
                       )}
