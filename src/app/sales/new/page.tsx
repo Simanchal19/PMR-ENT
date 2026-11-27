@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { 
   getCustomers, 
   getBills, 
+  getBillById,
   createBill, 
+  updateBill,
   createCustomer,
   getCementBrands,
   getRodSizes,
@@ -30,7 +32,8 @@ import {
   Truck,
   UserPlus,
   Phone,
-  MapPin
+  MapPin,
+  Edit2
 } from "lucide-react";
 import Link from "next/link";
 import { CementBrandManagerModal, RodSizeManagerModal } from "@/components/admin/MasterCatalogModals";
@@ -47,6 +50,8 @@ export default function CreateBillPage() {
   const [billDate, setBillDate] = useState(getTodayDateString());
   const [notes, setNotes] = useState("");
   const [successBill, setSuccessBill] = useState<Bill | null>(null);
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
+  const [isUpdateSuccess, setIsUpdateSuccess] = useState(false);
 
   // Cement Line Item Interface
   interface CementItemInput {
@@ -100,52 +105,173 @@ export default function CreateBillPage() {
   const [newCustomerAddress, setNewCustomerAddress] = useState("");
   const [newCustomerOpeningBalance, setNewCustomerOpeningBalance] = useState("");
 
+  const populateFormForEdit = (
+    bill: Bill,
+    custList: Customer[],
+    bList: CementBrand[],
+    sList: RodSize[]
+  ) => {
+    setEditingBill(bill);
+    setSuccessBill(null);
+    setCategory(bill.bill_category);
+    setBillDate(bill.bill_date || getTodayDateString());
+    setSelectedCustomerId(bill.customer_id);
+    const custObj = custList.find((c) => c.id === bill.customer_id);
+    setCustomerSearch(custObj ? custObj.name : bill.customer_name);
+    setNotes(bill.notes || "");
+
+    const allItems = bill.items || [];
+    const isServiceItem = (it: any) =>
+      it.unit === "SERVICE" ||
+      (it.item_name || "").toLowerCase().includes("labour") ||
+      (it.item_name || "").toLowerCase().includes("transport");
+    const goodsItems = allItems.filter((it) => !isServiceItem(it));
+    const labourItem = allItems.find((it) => (it.item_name || "").toLowerCase().includes("labour"));
+    const transportItem = allItems.find((it) => (it.item_name || "").toLowerCase().includes("transport"));
+
+    const lCost = bill.labour_amount ?? labourItem?.total_amount ?? 0;
+    const tCost = bill.transport_amount ?? transportItem?.total_amount ?? 0;
+    setLabourCost(lCost > 0 ? String(lCost) : "");
+    setTransportCost(tCost > 0 ? String(tCost) : "");
+
+    if (bill.bill_category === "cement") {
+      if (goodsItems.length > 0) {
+        setCementItems(
+          goodsItems.map((it, idx) => {
+            const rawBrand = (it.item_name || "").replace(/\s*Cement$/i, "").trim();
+            const matchedBrand =
+              bList.find((b) => b.name.toUpperCase() === rawBrand.toUpperCase())?.name ||
+              rawBrand ||
+              "LNT";
+            return {
+              id: it.id || `c-edit-${idx + 1}`,
+              brand: matchedBrand,
+              bags: String(it.quantity || ""),
+              rate: String(it.unit_price || ""),
+              amount: it.total_amount || 0,
+            };
+          })
+        );
+      } else if (bill.cement_details) {
+        setCementItems([
+          {
+            id: "c-edit-1",
+            brand: bill.cement_details.cement_type || "LNT",
+            bags: String(bill.cement_details.qty_bags || ""),
+            rate: String(bill.cement_details.unit_rate || ""),
+            amount: bill.cement_details.amount || 0,
+          },
+        ]);
+      }
+    } else if (bill.bill_category === "rod") {
+      if (goodsItems.length > 0) {
+        setRodItems(
+          goodsItems.map((it, idx) => {
+            const rawSize = (it.item_name || "").replace(/^TMT\s*Steel\s*Rod\s*/i, "").trim();
+            const matchedSize =
+              sList.find((s) => s.size.toLowerCase() === rawSize.toLowerCase())?.size ||
+              rawSize ||
+              "10mm";
+            return {
+              id: it.id || `r-edit-${idx + 1}`,
+              size: matchedSize,
+              kg: String(it.quantity || ""),
+              rate: String(it.unit_price || ""),
+              amount: it.total_amount || 0,
+            };
+          })
+        );
+      } else if (bill.rod_details) {
+        setRodItems([
+          {
+            id: "r-edit-1",
+            size: bill.rod_details.rod_size || "10mm",
+            kg: String(bill.rod_details.qty_kg || ""),
+            rate: String(bill.rod_details.rate_per_kg || ""),
+            amount: bill.rod_details.amount || 0,
+          },
+        ]);
+      }
+    } else {
+      if (goodsItems.length > 0) {
+        setDailyItems(
+          goodsItems.map((it) => ({
+            name: it.item_name || "",
+            qty: it.quantity ?? "",
+            rate: it.unit_price ?? "",
+            amount: it.total_amount || 0,
+          }))
+        );
+      } else {
+        setDailyItems([{ name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+      }
+    }
+  };
+
   useEffect(() => {
     const list = getCustomers();
     setCustomers(list);
 
+    const bList = getCementBrands();
+    const sList = getRodSizes();
+    const hList = getHardwareItems();
+    setCementBrands(bList);
+    setRodSizes(sList);
+    setHardwareItems(hList);
+
+    let editIdParam: string | null = null;
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      editIdParam = params.get("edit");
       const catParam = params.get("category");
-      if (catParam && BILL_CATEGORIES.some((c) => c.id === catParam)) {
+      if (!editIdParam && catParam && BILL_CATEGORIES.some((c) => c.id === catParam)) {
         setCategory(catParam as BillCategory);
       }
     }
 
-    const loadCatalogs = () => {
-      const bList = getCementBrands();
-      const sList = getRodSizes();
-      const hList = getHardwareItems();
-      setCementBrands(bList);
-      setRodSizes(sList);
-      setHardwareItems(hList);
-
-      const activeB = bList.filter(b => b.isActive);
-      if (activeB.length > 0) {
-        setCementItems(prev => {
-          if (prev.length === 1 && !prev[0].bags && !prev[0].rate) {
-            return [{
-              ...prev[0],
-              brand: activeB[0].name,
-              rate: activeB[0].defaultRate ? String(activeB[0].defaultRate) : ""
-            }];
-          }
-          return prev;
-        });
+    if (editIdParam) {
+      const targetBill = getBillById(editIdParam);
+      if (targetBill) {
+        populateFormForEdit(targetBill, list, bList, sList);
       }
+    }
 
-      const activeS = sList.filter(s => s.isActive);
-      if (activeS.length > 0) {
-        setRodItems(prev => {
-          if (prev.length === 1 && !prev[0].kg && !prev[0].rate) {
-            return [{
-              ...prev[0],
-              size: activeS[0].size,
-              rate: activeS[0].defaultRate ? String(activeS[0].defaultRate) : ""
-            }];
-          }
-          return prev;
-        });
+    const loadCatalogs = () => {
+      const latestB = getCementBrands();
+      const latestS = getRodSizes();
+      const latestH = getHardwareItems();
+      setCementBrands(latestB);
+      setRodSizes(latestS);
+      setHardwareItems(latestH);
+
+      if (!editIdParam) {
+        const activeB = latestB.filter(b => b.isActive);
+        if (activeB.length > 0) {
+          setCementItems(prev => {
+            if (prev.length === 1 && !prev[0].bags && !prev[0].rate) {
+              return [{
+                ...prev[0],
+                brand: activeB[0].name,
+                rate: activeB[0].defaultRate ? String(activeB[0].defaultRate) : ""
+              }];
+            }
+            return prev;
+          });
+        }
+
+        const activeS = latestS.filter(s => s.isActive);
+        if (activeS.length > 0) {
+          setRodItems(prev => {
+            if (prev.length === 1 && !prev[0].kg && !prev[0].rate) {
+              return [{
+                ...prev[0],
+                size: activeS[0].size,
+                rate: activeS[0].defaultRate ? String(activeS[0].defaultRate) : ""
+              }];
+            }
+            return prev;
+          });
+        }
       }
 
       const session = getClientSession();
@@ -155,14 +281,6 @@ export default function CreateBillPage() {
 
     loadCatalogs();
     window.addEventListener("tpm_data_updated", loadCatalogs);
-
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const catParam = params.get("category");
-      if (catParam === "cement" || catParam === "rod" || catParam === "daily") {
-        setCategory(catParam);
-      }
-    }
 
     return () => window.removeEventListener("tpm_data_updated", loadCatalogs);
   }, []);
@@ -404,6 +522,8 @@ export default function CreateBillPage() {
     setSelectedCustomerId("");
     setCustomerSearch("");
     setIsDropdownOpen(false);
+    setEditingBill(null);
+    setIsUpdateSuccess(false);
     const activeB = cementBrands.filter(b => b.isActive);
     setCementItems([{
       id: "c-1",
@@ -425,6 +545,7 @@ export default function CreateBillPage() {
     setTransportCost("");
     setNotes("");
     setSuccessBill(null);
+    router.replace("/sales/new");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -568,6 +689,40 @@ export default function CreateBillPage() {
       });
     }
 
+    if (editingBill) {
+      const session = getClientSession();
+      const actor = session?.user?.fullName || session?.user?.username || "System User";
+      const res = updateBill(
+        editingBill.id,
+        {
+          bill_category: category,
+          bill_date: billDate,
+          customer_id: cust.id,
+          customer_name: cust.name,
+          subtotal: goodsSubtotal,
+          labour_amount: labourVal,
+          transport_amount: transportVal,
+          discount_amount: editingBill.discount_amount || 0,
+          tax_amount: editingBill.tax_amount || 0,
+          total_amount: currentTotal,
+          notes: notes.trim(),
+          is_imported: editingBill.is_imported ?? false,
+          items,
+          cement_details,
+          rod_details,
+          daily_details
+        },
+        actor
+      );
+      if (!res.success || !res.bill) {
+        alert(res.error || "Failed to update invoice.");
+        return;
+      }
+      setIsUpdateSuccess(true);
+      setSuccessBill(res.bill);
+      return;
+    }
+
     const created = createBill({
       bill_number: billNumber,
       bill_category: category,
@@ -590,6 +745,7 @@ export default function CreateBillPage() {
       daily_details
     });
 
+    setIsUpdateSuccess(false);
     setSuccessBill(created);
   };
 
@@ -605,10 +761,21 @@ export default function CreateBillPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Create New Sales Bill</h1>
-            <p className="text-xs text-slate-500">Manual entry for customer invoice posting to financial ledger</p>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              {editingBill ? `Edit Sales Bill #${editingBill.bill_number}` : "Create New Sales Bill"}
+            </h1>
+            <p className="text-xs text-slate-500">
+              {editingBill
+                ? "Modify invoice details — customer ledger and stock will reconcile automatically"
+                : "Manual entry for customer invoice posting to financial ledger"}
+            </p>
           </div>
         </div>
+        {editingBill && !successBill && (
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold">
+            Editing #{editingBill.bill_number}
+          </span>
+        )}
       </div>
 
       {successBill ? (
@@ -617,10 +784,10 @@ export default function CreateBillPage() {
             <CheckCircle2 className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-bold text-slate-900">
-            Bill #{successBill.bill_number} Created Successfully!
+            Bill #{successBill.bill_number} {isUpdateSuccess ? "Updated" : "Created"} Successfully!
           </h2>
           <p className="text-xs text-slate-600 max-w-md mx-auto">
-            Total amount of {formatCurrency(successBill.total_amount)} has been billed to {successBill.customer_name} and updated in their customer ledger.
+            Total amount of {formatCurrency(successBill.total_amount)} has been {isUpdateSuccess ? "reconciled for" : "billed to"} {successBill.customer_name} and updated in their customer ledger.
           </p>
           <div className="max-w-md mx-auto p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-left space-y-2">
             <div className="font-bold text-slate-700 text-[11px] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
@@ -648,8 +815,17 @@ export default function CreateBillPage() {
               ) : null}
             </div>
           ) : null}
-          <div className="pt-4 flex justify-center gap-3">
+          <div className="pt-4 flex flex-wrap justify-center gap-2.5 sm:gap-3">
             <button
+              type="button"
+              onClick={() => populateFormForEdit(successBill, getCustomers(), cementBrands, rodSizes)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 border border-amber-200 bg-amber-50 hover:bg-amber-100 rounded-lg text-xs font-bold text-amber-800 transition-colors"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Edit This Bill</span>
+            </button>
+            <button
+              type="button"
               onClick={handleResetForm}
               className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
@@ -1423,7 +1599,7 @@ export default function CreateBillPage() {
                   className="flex items-center gap-1.5 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Post Bill & Save</span>
+                  <span>{editingBill ? "Update & Save Invoice" : "Post Bill & Save"}</span>
                 </button>
               </div>
             </div>

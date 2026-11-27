@@ -754,6 +754,111 @@ export function createBill(newBill: Omit<Bill, "id" | "created_at">): Bill {
   return bill;
 }
 
+export function getBillById(billId: string): Bill | undefined {
+  return getBills().find(b => b.id === billId);
+}
+
+/**
+ * Update an existing bill with atomic customer ledger balance adjustment,
+ * payment allocation safety check, and immutable audit logging.
+ */
+export function updateBill(
+  billId: string,
+  updatedFields: Omit<Bill, "id" | "created_at" | "bill_number" | "payment_status" | "status">,
+  actor?: string
+): { success: boolean; bill?: Bill; error?: string } {
+  const bills = getBills();
+  const idx = bills.findIndex(b => b.id === billId);
+  if (idx === -1) {
+    return { success: false, error: "Invoice not found." };
+  }
+
+  const existing = bills[idx];
+  if (existing.status === "voided") {
+    return { success: false, error: "Cannot edit a voided invoice." };
+  }
+
+  const allPayments = getPayments().filter(p => p.status === "posted");
+  const allReturns = getReturns().filter(r => isApprovedReturn(r));
+  const settlement = getBillSettlementInfo(billId, allPayments, allReturns);
+
+  if (updatedFields.total_amount < settlement.allocated_payments_amount - MONEY_EPSILON) {
+    return {
+      success: false,
+      error: `Cannot reduce invoice total (₹${updatedFields.total_amount}) below already-allocated payments (₹${settlement.allocated_payments_amount}). Reverse payment allocations first.`,
+    };
+  }
+
+  if (
+    existing.customer_id !== updatedFields.customer_id &&
+    (settlement.allocations.length > 0 || settlement.approved_returns_amount > MONEY_EPSILON)
+  ) {
+    return {
+      success: false,
+      error: "Cannot change customer because payments or sales returns are already linked to this invoice.",
+    };
+  }
+
+  let newPaymentStatus: Bill["payment_status"] = existing.payment_status;
+  if (settlement.total_settled_amount > MONEY_EPSILON) {
+    const remaining = Math.max(0, updatedFields.total_amount - settlement.total_settled_amount);
+    newPaymentStatus = remaining <= MONEY_EPSILON ? "paid" : "partially_paid";
+  } else if (
+    existing.payment_status === "legacy_paid_yes" &&
+    Math.abs(updatedFields.total_amount - existing.total_amount) <= MONEY_EPSILON
+  ) {
+    newPaymentStatus = "legacy_paid_yes";
+  } else {
+    newPaymentStatus = "unpaid";
+  }
+
+  const updatedBill: Bill = {
+    ...existing,
+    ...updatedFields,
+    id: existing.id,
+    bill_number: existing.bill_number,
+    payment_status: newPaymentStatus,
+    status: existing.status,
+    created_at: existing.created_at,
+  };
+
+  bills[idx] = updatedBill;
+  saveBills(bills);
+
+  // Reconcile customer balance delta
+  const customers = getCustomers();
+  if (existing.customer_id === updatedBill.customer_id) {
+    const diff = updatedBill.total_amount - existing.total_amount;
+    const custIdx = customers.findIndex(c => c.id === updatedBill.customer_id);
+    if (custIdx >= 0 && Math.abs(diff) > 0) {
+      customers[custIdx].total_bills_amount = Math.max(0, (customers[custIdx].total_bills_amount || 0) + diff);
+      customers[custIdx].current_balance = (customers[custIdx].current_balance || 0) + diff;
+      saveCustomers(customers);
+    }
+  } else {
+    const oldCustIdx = customers.findIndex(c => c.id === existing.customer_id);
+    if (oldCustIdx >= 0) {
+      customers[oldCustIdx].total_bills_amount = Math.max(0, (customers[oldCustIdx].total_bills_amount || 0) - existing.total_amount);
+      customers[oldCustIdx].current_balance = (customers[oldCustIdx].current_balance || 0) - existing.total_amount;
+    }
+    const newCustIdx = customers.findIndex(c => c.id === updatedBill.customer_id);
+    if (newCustIdx >= 0) {
+      customers[newCustIdx].total_bills_amount = (customers[newCustIdx].total_bills_amount || 0) + updatedBill.total_amount;
+      customers[newCustIdx].current_balance = (customers[newCustIdx].current_balance || 0) + updatedBill.total_amount;
+    }
+    saveCustomers(customers);
+  }
+
+  addAuditLog({
+    action: "UPDATE_BILL",
+    entity: `Bill #${updatedBill.bill_number} (${updatedBill.customer_name})`,
+    actor: actor || "System User",
+    notes: `Edited invoice #${updatedBill.bill_number}: Total ₹${existing.total_amount} -> ₹${updatedBill.total_amount}, Date: ${updatedBill.bill_date || "Not Specified"}`,
+  });
+
+  return { success: true, bill: updatedBill };
+}
+
 /**
  * Record a payment and optionally allocate to specific bills
  */
