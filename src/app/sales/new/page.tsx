@@ -104,6 +104,14 @@ export default function CreateBillPage() {
     const list = getCustomers();
     setCustomers(list);
 
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get("category");
+      if (catParam && BILL_CATEGORIES.some((c) => c.id === catParam)) {
+        setCategory(catParam as BillCategory);
+      }
+    }
+
     const loadCatalogs = () => {
       const bList = getCementBrands();
       const sList = getRodSizes();

@@ -17,7 +17,13 @@ import {
   Users,
   ChevronRight,
   PieChart as PieChartIcon,
-  Truck
+  Truck,
+  Layers,
+  Droplet,
+  Wrench,
+  Paintbrush,
+  Cog,
+  Sparkles
 } from "lucide-react";
 import { formatCurrency, formatDate, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import {
@@ -32,7 +38,109 @@ import {
   OutstandingSummary,
   PurchaseSummaryMetrics,
 } from "@/lib/storage";
-import { Bill, DashboardMetrics } from "@/lib/types";
+import { Bill, BillCategory, DashboardMetrics } from "@/lib/types";
+
+const DASHBOARD_CATEGORIES: {
+  id: BillCategory;
+  name: string;
+  desc: string;
+  prefix: string;
+  icon: any;
+  color: string;
+  bg: string;
+  colorHex: string;
+}[] = [
+  {
+    id: "mix",
+    name: "Mix & Miscellaneous",
+    desc: "Mixed & general items",
+    prefix: "MX",
+    icon: Layers,
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
+    colorHex: "#6366F1",
+  },
+  {
+    id: "cement",
+    name: "Cement",
+    desc: "Bags & Brand rates",
+    prefix: "SE",
+    icon: Package,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    colorHex: "#16A34A",
+  },
+  {
+    id: "rod",
+    name: "Road",
+    desc: "TMT Rebar & Kg rates",
+    prefix: "RD",
+    icon: Hammer,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    colorHex: "#D97706",
+  },
+  {
+    id: "daily",
+    name: "Electrical",
+    desc: "Wires, switches & parts",
+    prefix: "S",
+    icon: Zap,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    colorHex: "#2563EB",
+  },
+  {
+    id: "plumbing",
+    name: "Plumbing Bill",
+    desc: "Pipes, fittings & valves",
+    prefix: "PL",
+    icon: Droplet,
+    color: "text-cyan-600",
+    bg: "bg-cyan-50",
+    colorHex: "#0891B2",
+  },
+  {
+    id: "hardware",
+    name: "Hardware Accessories",
+    desc: "Fasteners, tools & wire",
+    prefix: "HW",
+    icon: Wrench,
+    color: "text-slate-600",
+    bg: "bg-slate-100",
+    colorHex: "#475569",
+  },
+  {
+    id: "paints",
+    name: "Putty & Paints",
+    desc: "Wall putty & coatings",
+    prefix: "PT",
+    icon: Paintbrush,
+    color: "text-fuchsia-600",
+    bg: "bg-fuchsia-50",
+    colorHex: "#C026D3",
+  },
+  {
+    id: "machinery",
+    name: "Motor & Machinery",
+    desc: "Motors, pumps & gear",
+    prefix: "MM",
+    icon: Cog,
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    colorHex: "#EA580C",
+  },
+  {
+    id: "ceramic",
+    name: "CP & Ceramic Items",
+    desc: "Sanitary & CP fittings",
+    prefix: "CP",
+    icon: Sparkles,
+    color: "text-teal-600",
+    bg: "bg-teal-50",
+    colorHex: "#0D9488",
+  },
+];
 import { PeriodPreset, resolvePeriod, periodToQuery, toYMD } from "@/lib/period";
 import PeriodSelector from "@/components/reports/PeriodSelector";
 import { 
@@ -241,6 +349,69 @@ export default function DashboardPage() {
         <span>
           Outstanding: <strong className="text-slate-800">{period.asOfLabel}</strong>
         </span>
+      </div>
+
+      {/* 9 Bill Categories Quick Access Grid (Prominently at the top of the dashboard) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Bill Categories
+            </h2>
+            <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              9 Active Categories · Click to create bill
+            </span>
+          </div>
+          <Link
+            href="/sales"
+            className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Sales Register →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2 sm:gap-2.5">
+          {DASHBOARD_CATEGORIES.map((c) => {
+            const Icon = c.icon;
+            const amount = sales[c.id] || 0;
+            const count = (sales[`${c.id}_count` as keyof SalesBreakdown] as number) || 0;
+            return (
+              <Link
+                key={c.id}
+                href={`/sales/new?category=${c.id}`}
+                title={`Open ${c.name} Billing`}
+                className="group relative bg-white rounded-xl p-2.5 sm:p-3 border border-slate-200 shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between text-left"
+                style={{ borderTop: `3px solid ${c.colorHex}` }}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-2">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${c.bg} ${c.color} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}>
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                      {c.prefix}
+                    </span>
+                  </div>
+                  <div className="font-bold text-[11px] sm:text-xs text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 leading-tight">
+                    {c.name}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5 hidden xl:block truncate">
+                    {c.desc}
+                  </div>
+                </div>
+
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                  <span className="text-slate-500 font-medium truncate">
+                    {count > 0 ? `${count} bill${count > 1 ? "s" : ""}` : "Create"}
+                  </span>
+                  <span className={`font-bold ${amount > 0 ? "text-slate-800" : "text-blue-600"}`}>
+                    {amount > 0 ? formatCurrency(amount) : "+ Bill"}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Data Quality & Unverified Queue Banner */}

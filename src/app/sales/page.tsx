@@ -21,6 +21,13 @@ export default function SalesPage() {
 
   useEffect(() => {
     loadData();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get("category");
+      if (catParam && BILL_CATEGORIES.some((c) => c.id === catParam)) {
+        setCategoryFilter(catParam as BillCategory);
+      }
+    }
     window.addEventListener("tpm_data_updated", loadData);
     return () => window.removeEventListener("tpm_data_updated", loadData);
   }, []);
