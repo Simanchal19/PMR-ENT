@@ -860,6 +860,64 @@ export function updateBill(
 }
 
 /**
+ * Delete an existing invoice with atomic customer ledger balance reversal,
+ * payment/return linkage safety check, and immutable audit logging.
+ * Stock overview automatically excludes deleted invoices on recalculation.
+ */
+export function deleteBill(
+  billId: string,
+  actor?: string
+): { success: boolean; bill?: Bill; error?: string } {
+  const bills = getBills();
+  const idx = bills.findIndex(b => b.id === billId);
+  if (idx === -1) {
+    return { success: false, error: "Invoice not found." };
+  }
+
+  const existing = bills[idx];
+  const allPayments = getPayments().filter(p => p.status === "posted");
+  const allReturns = getReturns().filter(r => isApprovedReturn(r));
+  const settlement = getBillSettlementInfo(billId, allPayments, allReturns);
+
+  if (
+    settlement.allocations.length > 0 ||
+    settlement.allocated_payments_amount > MONEY_EPSILON ||
+    settlement.approved_returns_amount > MONEY_EPSILON
+  ) {
+    return {
+      success: false,
+      error: `Cannot delete invoice #${existing.bill_number} because payments (₹${settlement.allocated_payments_amount.toFixed(2)}) or sales returns (₹${settlement.approved_returns_amount.toFixed(2)}) are linked to it. Reverse those allocations/returns first.`,
+    };
+  }
+
+  bills.splice(idx, 1);
+  saveBills(bills);
+
+  if (existing.status === "posted") {
+    const customers = getCustomers();
+    const custIdx = customers.findIndex(c => c.id === existing.customer_id);
+    if (custIdx >= 0) {
+      customers[custIdx].total_bills_amount = Math.max(
+        0,
+        (customers[custIdx].total_bills_amount || 0) - (existing.total_amount || 0)
+      );
+      customers[custIdx].current_balance =
+        (customers[custIdx].current_balance || 0) - (existing.total_amount || 0);
+      saveCustomers(customers);
+    }
+  }
+
+  addAuditLog({
+    action: "DELETE_BILL",
+    entity: `Bill #${existing.bill_number} (${existing.customer_name})`,
+    actor: actor || "System User",
+    notes: `Deleted invoice #${existing.bill_number} dated ${existing.bill_date || "Not Specified"} for ₹${existing.total_amount}. Customer ledger and stock automatically reconciled.`,
+  });
+
+  return { success: true, bill: existing };
+}
+
+/**
  * Record a payment and optionally allocate to specific bills
  */
 export function recordPayment(paymentData: {

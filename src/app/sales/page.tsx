@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getBills, getBusinessProfile } from "@/lib/storage";
+import { getBills, getBusinessProfile, deleteBill } from "@/lib/storage";
+import { getClientSession } from "@/lib/auth";
 import { Bill, BillCategory, BusinessProfile } from "@/lib/types";
 import { formatCurrency, formatDate, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
-import { Search, PlusCircle, Printer, Eye, Edit2, Filter, X, Receipt } from "lucide-react";
+import { Search, PlusCircle, Printer, Eye, Edit2, Trash2, AlertTriangle, X, Receipt } from "lucide-react";
 
 export default function SalesPage() {
   const [bills, setBills] = useState<Bill[]>([]);
@@ -13,6 +14,25 @@ export default function SalesPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | BillCategory>("all");
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [billToDelete, setBillToDelete] = useState<Bill | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleConfirmDelete = () => {
+    if (!billToDelete) return;
+    const session = getClientSession();
+    const actor = session?.user?.fullName || "System User";
+    const res = deleteBill(billToDelete.id, actor);
+    if (!res.success) {
+      setDeleteError(res.error || "Failed to delete invoice.");
+      return;
+    }
+    if (selectedBill?.id === billToDelete.id) {
+      setSelectedBill(null);
+    }
+    setBillToDelete(null);
+    setDeleteError(null);
+    loadData();
+  };
 
   const loadData = () => {
     setBills(getBills());
@@ -215,7 +235,7 @@ export default function SalesPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <div className="inline-flex items-center justify-center gap-1.5">
+                      <div className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setSelectedBill(bill)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
@@ -234,6 +254,17 @@ export default function SalesPage() {
                             <span>Edit</span>
                           </Link>
                         )}
+                        <button
+                          onClick={() => {
+                            setDeleteError(null);
+                            setBillToDelete(bill);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition-colors"
+                          title="Delete Invoice"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -347,11 +378,71 @@ export default function SalesPage() {
                 </Link>
               )}
               <button
+                onClick={() => {
+                  setDeleteError(null);
+                  setBillToDelete(selectedBill);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-semibold text-xs transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Invoice</span>
+              </button>
+              <button
                 onClick={() => window.print()}
                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs shadow-sm"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Invoice</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Invoice Confirmation Modal */}
+      {billToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-5 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-slate-900">
+                  Delete Invoice #{billToDelete.bill_number}?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1">
+                  This will permanently remove invoice <strong>#{billToDelete.bill_number}</strong> for{" "}
+                  <strong>{billToDelete.customer_name}</strong> ({formatCurrency(billToDelete.total_amount)}).
+                  Customer ledger balance and inventory stock will automatically reconcile, and the deletion will be recorded in the audit log.
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setBillToDelete(null);
+                  setDeleteError(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete</span>
               </button>
             </div>
           </div>
