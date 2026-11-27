@@ -793,7 +793,7 @@ export default function CreateBillPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5 pb-24 md:pb-0">
+    <div className="w-full mx-auto space-y-5 pb-24 md:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
         <div className="flex items-center gap-3">
@@ -885,7 +885,7 @@ export default function CreateBillPage() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row items-start gap-5">
+        <form onSubmit={handleSubmit} className="flex flex-col xl:flex-row items-start gap-5">
           {/* LEFT COLUMN (Main Billing Form — expands when sidebar collapses) */}
           <div className="flex-1 min-w-0 w-full space-y-4">
             {/* Top Bar Card: Customer / Party Name + Quick Pills + Bill Date */}
@@ -1607,97 +1607,110 @@ export default function CreateBillPage() {
                 </div>
 
                 {!isMobile ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs table-fixed min-w-[640px]">
-                      <thead className="bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
-                        <tr>
-                          <th className="py-2.5 px-3 w-[4%] text-center whitespace-nowrap">#</th>
-                          <th className="py-2.5 px-3 w-[38%] whitespace-nowrap">Product Name / Description <span className="text-rose-500">*</span></th>
-                          <th className="py-2.5 px-3 w-[18%] whitespace-nowrap">Brand</th>
-                          <th className="py-2.5 px-3 w-[12%] text-center whitespace-nowrap">Quantity <span className="text-rose-500">*</span></th>
-                          <th className="py-2.5 px-3 w-[14%] text-right whitespace-nowrap">Unit Rate (₹) <span className="text-rose-500">*</span></th>
-                          <th className="py-2.5 px-3 w-[14%] text-right whitespace-nowrap">Item Total (₹)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {dailyItems.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-blue-50/20">
-                            <td className="py-2 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
-                            <td className="py-2 px-3">
-                              <input
-                                ref={(el) => { dailyFirstRefs.current[idx] = el; }}
-                                type="text"
-                                required
-                                list="sales-hardware-catalog"
-                                placeholder="e.g. Anchor 16A Switch / 2.5mm Wire"
-                                value={item.name}
-                                onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}
-                                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
-                              />
-                            </td>
-                            <td className="py-2 px-3">
-                              <input
-                                type="text"
-                                placeholder="e.g. Havells"
-                                value={item.brand || ""}
-                                onChange={(e) => handleDailyItemChange(idx, "brand", e.target.value)}
-                                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
-                              />
-                            </td>
-                            <td className="py-2 px-3">
-                              <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                required
-                                placeholder="e.g. 5"
-                                value={item.qty}
-                                onChange={(e) => handleDailyItemChange(idx, "qty", e.target.value)}
-                                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
-                              />
-                            </td>
-                            <td className="py-2 px-3">
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
-                                <input
-                                  type="number"
-                                  step="0.1"
-                                  min="0"
-                                  required
-                                  placeholder="e.g. 250"
-                                  value={item.rate}
-                                  onChange={(e) => handleDailyItemChange(idx, "rate", e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      const nextIdx = dailyItems.length;
-                                      handleAddDailyItem();
-                                      setTimeout(() => dailyFirstRefs.current[nextIdx]?.focus(), 20);
-                                    }
-                                  }}
-                                  className="w-full pl-6 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
-                                />
-                              </div>
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono font-black text-blue-950">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <span>{formatCurrency(item.amount, false)}</span>
-                                {dailyItems.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveDailyItem(idx)}
-                                    className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors"
-                                    title="Remove item"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="w-full text-xs">
+                    {/* CSS Grid Header — identical column tracks as body rows */}
+                    <div className="grid grid-cols-[20px_minmax(0,3fr)_minmax(72px,1fr)_minmax(66px,0.72fr)_minmax(88px,0.9fr)_minmax(82px,0.9fr)] items-center gap-2 px-3 py-2.5 bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
+                      <div className="text-center whitespace-nowrap">#</div>
+                      <div className="whitespace-nowrap truncate">
+                        Product Name / Description <span className="text-rose-500">*</span>
+                      </div>
+                      <div className="whitespace-nowrap">Brand</div>
+                      <div className="text-center whitespace-nowrap">
+                        Quantity <span className="text-rose-500">*</span>
+                      </div>
+                      <div className="text-right whitespace-nowrap">
+                        Unit Rate (₹) <span className="text-rose-500">*</span>
+                      </div>
+                      <div className="text-right whitespace-nowrap">Item Total (₹)</div>
+                    </div>
+
+                    {/* CSS Grid Body Rows */}
+                    <div className="divide-y divide-slate-100">
+                      {dailyItems.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="grid grid-cols-[20px_minmax(0,3fr)_minmax(72px,1fr)_minmax(66px,0.72fr)_minmax(88px,0.9fr)_minmax(82px,0.9fr)] items-center gap-2 px-3 py-2 hover:bg-blue-50/20 transition-colors"
+                        >
+                          <div className="text-center font-bold text-slate-500 tabular-nums">
+                            {idx + 1}
+                          </div>
+
+                          <div className="min-w-0">
+                            <input
+                              ref={(el) => { dailyFirstRefs.current[idx] = el; }}
+                              type="text"
+                              required
+                              list="sales-hardware-catalog"
+                              placeholder="Product / Item Description"
+                              value={item.name}
+                              onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}
+                              className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <input
+                              type="text"
+                              placeholder="Brand"
+                              value={item.brand || ""}
+                              onChange={(e) => handleDailyItemChange(idx, "brand", e.target.value)}
+                              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              required
+                              placeholder="Qty"
+                              value={item.qty}
+                              onChange={(e) => handleDailyItemChange(idx, "qty", e.target.value)}
+                              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+
+                          <div className="min-w-0 relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              required
+                              placeholder="0.00"
+                              value={item.rate}
+                              onChange={(e) => handleDailyItemChange(idx, "rate", e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  const nextIdx = dailyItems.length;
+                                  handleAddDailyItem();
+                                  setTimeout(() => dailyFirstRefs.current[nextIdx]?.focus(), 20);
+                                }
+                              }}
+                              className="w-full h-9 pl-5 pr-2 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+
+                          <div className="min-w-0 flex items-center justify-end gap-1 font-mono font-black text-blue-950 tabular-nums">
+                            <span className="truncate">{formatCurrency(item.amount, false)}</span>
+                            {dailyItems.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDailyItem(idx)}
+                                className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors shrink-0"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="p-3 space-y-2.5">
@@ -1793,7 +1806,7 @@ export default function CreateBillPage() {
                   </div>
                 )}
 
-                <div className="px-4 py-3 bg-blue-50/40 border-t border-blue-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="px-3 py-2.5 bg-blue-50/40 border-t border-blue-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -1817,8 +1830,8 @@ export default function CreateBillPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN (300px capped sticky panel on lg+): Bill Summary Card */}
-          <aside className="w-full lg:w-[300px] lg:max-w-[300px] lg:shrink-0 lg:sticky lg:top-20">
+          {/* RIGHT COLUMN (300px capped sticky panel on xl+): Bill Summary Card */}
+          <aside className="w-full xl:w-[300px] xl:max-w-[300px] xl:shrink-0 xl:sticky xl:top-20">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                 <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
