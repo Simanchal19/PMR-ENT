@@ -880,15 +880,15 @@ export default function CreateBillPage() {
           <div className="lg:col-span-8 space-y-4 min-w-0">
             {/* Top Bar Card: Customer / Party Name + Quick Pills + Bill Date */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+              <div className="flex flex-col md:flex-row md:items-start gap-3.5">
                 {/* Customer Search + Pill Actions */}
-                <div className="md:col-span-8 space-y-1.5 relative" ref={dropdownRef}>
+                <div className="flex-1 min-w-0 space-y-1.5 relative" ref={dropdownRef}>
                   <label className="block text-xs font-bold text-slate-700">
                     Customer / Party Name <span className="text-rose-500">*</span>
                   </label>
 
-                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                    <div className="relative flex-1 min-w-[200px]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[165px]">
                       <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
@@ -925,7 +925,7 @@ export default function CreateBillPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenAddCustomerModal(customerSearch)}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 text-xs font-bold whitespace-nowrap transition-colors shrink-0"
+                      className="inline-flex items-center gap-1 px-2.5 py-2 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 text-[11px] font-bold whitespace-nowrap transition-colors shrink-0"
                       title="Add a new customer with mobile, address & opening balance"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -935,7 +935,7 @@ export default function CreateBillPage() {
                     <button
                       type="button"
                       onClick={handleSelectUnknownCustomer}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 hover:border-amber-300 text-xs font-bold whitespace-nowrap transition-colors shrink-0"
+                      className="inline-flex items-center gap-1 px-2.5 py-2 rounded-full bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 hover:border-amber-300 text-[11px] font-bold whitespace-nowrap transition-colors shrink-0"
                       title="Select Walk-in / Cash Counter Retail Party"
                     >
                       <Zap className="w-3.5 h-3.5 text-amber-500" />
@@ -1043,7 +1043,7 @@ export default function CreateBillPage() {
                 </div>
 
                 {/* Bill Date */}
-                <div className="md:col-span-4 space-y-1.5">
+                <div className="w-full md:w-44 shrink-0 space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     Bill Date <span className="text-rose-500">*</span>
                   </label>
