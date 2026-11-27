@@ -233,8 +233,11 @@ export default function CustomersPage() {
             : `TMT Steel Rod Supply`;
         }
       } else {
-        if (b.items && b.items.length > 0) {
-          goodsDescription = b.items.map(it => `${it.item_name} (Qty: ${it.quantity})`).join(", ");
+        const goodsItems = (b.items || []).filter(
+          it => it.unit !== "SERVICE" && !it.item_name.toLowerCase().includes("labour") && !it.item_name.toLowerCase().includes("transport")
+        );
+        if (goodsItems.length > 0) {
+          goodsDescription = goodsItems.map(it => `${it.item_name}${it.brand ? ` [${it.brand}]` : ""} (Qty: ${it.quantity})`).join(", ");
         } else {
           goodsDescription = `${getCategoryConfig(b.bill_category).shortLabel} Items Supply`;
         }

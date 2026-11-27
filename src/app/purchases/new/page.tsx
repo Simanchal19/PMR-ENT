@@ -107,9 +107,9 @@ export default function CreatePurchaseBillPage() {
   const [rodKg, setRodKg] = useState("");
   const [rodPurchaseRate, setRodPurchaseRate] = useState("");
 
-  // Electrical / Hardware Items
+  // Electrical / Hardware & Line Items
   const [dailyItems, setDailyItems] = useState([
-    { name: "", qty: "" as any, rate: "" as any, amount: 0 },
+    { name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 },
   ]);
 
   // Immediate Payment Option at Purchase Entry
@@ -281,7 +281,7 @@ export default function CreatePurchaseBillPage() {
   };
 
   const handleAddDailyItem = () => {
-    setDailyItems([...dailyItems, { name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+    setDailyItems([...dailyItems, { name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }]);
   };
 
   const handleDailyItemChange = (index: number, field: string, val: any) => {
@@ -401,6 +401,7 @@ export default function CreatePurchaseBillPage() {
         id: `pitem-${idx}`,
         bill_id: "",
         item_name: it.name || `${getCategoryConfig(category).shortLabel} Stock`,
+        brand: (it.brand || "").trim() || undefined,
         item_category: category.toUpperCase(),
         quantity: parseFloat(it.qty) || 1,
         unit: "NOS",
@@ -423,7 +424,7 @@ export default function CreatePurchaseBillPage() {
     setCementPurchaseRate("");
     setRodKg("");
     setRodPurchaseRate("");
-    setDailyItems([{ name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+    setDailyItems([{ name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }]);
     setSettlementType("credit");
     setPartialPaidAmount("");
     setPaymentRef("");
@@ -1041,6 +1042,7 @@ export default function CreatePurchaseBillPage() {
                 {/* Desktop column header labels */}
                 <div className="hidden sm:flex items-center gap-3 px-3.5 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100/70 rounded-lg border border-slate-200/60">
                   <div className="flex-1">Product Name / Item Description</div>
+                  <div className="w-36">Brand</div>
                   <div className="w-24 text-center">Qty</div>
                   <div className="w-28 text-right">Cost (₹)</div>
                   <div className="w-28 text-right">Subtotal</div>
@@ -1079,6 +1081,20 @@ export default function CreatePurchaseBillPage() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
+                      </div>
+
+                      {/* Col 2 on desktop / Row 2a on mobile: Brand */}
+                      <div className="sm:w-36 sm:shrink-0">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase sm:hidden mb-1">
+                          Brand
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Brand (e.g. Havells)"
+                          value={item.brand || ""}
+                          onChange={(e) => handleDailyItemChange(idx, "brand", e.target.value)}
+                          className="w-full px-3 py-2 sm:py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50/50 sm:bg-white focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium placeholder:text-slate-400"
+                        />
                       </div>
 
                       {/* Row 2 on mobile / Cols 2-4 on desktop: Qty + Cost + Subtotal */}

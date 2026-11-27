@@ -190,8 +190,8 @@ export default function SalesPage() {
                           return (
                             <span>
                               {goodsItems.length === 1
-                                ? `${goodsItems[0].quantity} ${goodsItems[0].unit} • ${goodsItems[0].item_name}`
-                                : goodsItems.slice(0, 2).map((it) => it.item_name).join(", ") +
+                                ? `${goodsItems[0].quantity} ${goodsItems[0].unit} • ${goodsItems[0].item_name}${goodsItems[0].brand ? ` (${goodsItems[0].brand})` : ""}`
+                                : goodsItems.slice(0, 2).map((it) => `${it.item_name}${it.brand ? ` (${it.brand})` : ""}`).join(", ") +
                                   (goodsItems.length > 2 ? ` +${goodsItems.length - 2} more` : "")}
                             </span>
                           );
@@ -284,6 +284,7 @@ export default function SalesPage() {
                 <thead className="border-b border-slate-200 text-slate-500 font-semibold">
                   <tr>
                     <th className="py-1">Description</th>
+                    <th className="py-1">Brand</th>
                     <th className="py-1 text-center">Qty</th>
                     <th className="py-1 text-right">Rate</th>
                     <th className="py-1 text-right">Amount</th>
@@ -293,6 +294,7 @@ export default function SalesPage() {
                   {selectedBill.items.map((item, i) => (
                     <tr key={i}>
                       <td className="py-1.5 font-sans">{item.item_name}</td>
+                      <td className="py-1.5 font-sans text-slate-600">{item.brand || (item.item_category === "cement" && item.unit !== "SERVICE" ? item.item_name.replace(/\s*Cement$/i, "") : "-")}</td>
                       <td className="py-1.5 text-center">{item.quantity} {item.unit}</td>
                       <td className="py-1.5 text-right font-sans">{formatCurrency(item.unit_price, false)}</td>
                       <td className="py-1.5 text-right font-sans font-bold">{formatCurrency(item.total_amount, false)}</td>

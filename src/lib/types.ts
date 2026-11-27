@@ -67,6 +67,7 @@ export interface BillItem {
   id: string;
   bill_id: string;
   item_name: string;
+  brand?: string;
   item_category: string;
   quantity: number;
   unit: string;

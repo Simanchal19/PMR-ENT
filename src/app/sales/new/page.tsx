@@ -14,7 +14,7 @@ import {
   getHardwareItems,
   getStoredUserRole
 } from "@/lib/storage";
-import { Customer, BillCategory, Bill, CementBrand, RodSize, HardwareItem } from "@/lib/types";
+import { Customer, BillCategory, Bill, BillItem, CementBrand, RodSize, HardwareItem } from "@/lib/types";
 import { formatCurrency, getTodayDateString, generateBillNumber, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import { getClientSession } from "@/lib/auth";
 import { 
@@ -66,6 +66,7 @@ export default function CreateBillPage() {
   interface RodItemInput {
     id: string;
     size: string;
+    brand: string;
     kg: string;
     rate: string;
     amount: number;
@@ -78,7 +79,7 @@ export default function CreateBillPage() {
 
   // Rod Fields - Multi-item list
   const [rodItems, setRodItems] = useState<RodItemInput[]>([
-    { id: "r-1", size: "10mm", kg: "", rate: "", amount: 0 }
+    { id: "r-1", size: "10mm", brand: "", kg: "", rate: "", amount: 0 }
   ]);
 
   // Dynamic Master Catalogs (Admin Configurable)
@@ -89,9 +90,9 @@ export default function CreateBillPage() {
   const [showCementModal, setShowCementModal] = useState(false);
   const [showRodModal, setShowRodModal] = useState(false);
 
-  // Daily Electrical Items - Default to blank item for manual entry
+  // Line Items (Mix, Electrical, Plumbing, Hardware, Paints, Machinery, Ceramic)
   const [dailyItems, setDailyItems] = useState([
-    { name: "", qty: "" as any, rate: "" as any, amount: 0 }
+    { name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }
   ]);
 
   // Additional Charges: Labour & Transport Costs (Optional)
@@ -175,6 +176,7 @@ export default function CreateBillPage() {
             return {
               id: it.id || `r-edit-${idx + 1}`,
               size: matchedSize,
+              brand: it.brand || "",
               kg: String(it.quantity || ""),
               rate: String(it.unit_price || ""),
               amount: it.total_amount || 0,
@@ -186,6 +188,7 @@ export default function CreateBillPage() {
           {
             id: "r-edit-1",
             size: bill.rod_details.rod_size || "10mm",
+            brand: "",
             kg: String(bill.rod_details.qty_kg || ""),
             rate: String(bill.rod_details.rate_per_kg || ""),
             amount: bill.rod_details.amount || 0,
@@ -197,13 +200,14 @@ export default function CreateBillPage() {
         setDailyItems(
           goodsItems.map((it) => ({
             name: it.item_name || "",
+            brand: it.brand || "",
             qty: it.quantity ?? "",
             rate: it.unit_price ?? "",
             amount: it.total_amount || 0,
           }))
         );
       } else {
-        setDailyItems([{ name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+        setDailyItems([{ name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }]);
       }
     }
   };
@@ -328,7 +332,7 @@ export default function CreateBillPage() {
     }
   };
 
-  const handleRodItemChange = (index: number, field: "size" | "kg" | "rate", value: string) => {
+  const handleRodItemChange = (index: number, field: "size" | "brand" | "kg" | "rate", value: string) => {
     const updated = [...rodItems];
     const item = { ...updated[index], [field]: value };
 
@@ -358,6 +362,7 @@ export default function CreateBillPage() {
       {
         id: `r-${Date.now()}-${prev.length + 1}`,
         size: defaultSize,
+        brand: "",
         kg: "",
         rate: defaultRate,
         amount: 0
@@ -484,7 +489,7 @@ export default function CreateBillPage() {
   };
 
   const handleAddDailyItem = () => {
-    setDailyItems([...dailyItems, { name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+    setDailyItems([...dailyItems, { name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }]);
   };
 
   const handleDailyItemChange = (index: number, field: string, value: any) => {
@@ -536,11 +541,12 @@ export default function CreateBillPage() {
     setRodItems([{
       id: "r-1",
       size: activeS[0]?.size || "10mm",
+      brand: "",
       kg: "",
       rate: activeS[0]?.defaultRate ? String(activeS[0].defaultRate) : "",
       amount: 0
     }]);
-    setDailyItems([{ name: "", qty: "" as any, rate: "" as any, amount: 0 }]);
+    setDailyItems([{ name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }]);
     setLabourCost("");
     setTransportCost("");
     setNotes("");
@@ -565,7 +571,7 @@ export default function CreateBillPage() {
     const existingBills = getBills().filter(b => b.bill_category === category);
     const billNumber = generateBillNumber(category, existingBills.length);
 
-    let items = [];
+    let items: BillItem[] = [];
     let cement_details = undefined;
     let rod_details = undefined;
     let daily_details = undefined;
@@ -586,6 +592,7 @@ export default function CreateBillPage() {
           id: `item-${Date.now()}-${idx + 1}`,
           bill_id: "",
           item_name: `${it.brand} Cement`,
+          brand: it.brand,
           item_category: "cement",
           quantity: bags,
           unit: "BAGS",
@@ -623,6 +630,7 @@ export default function CreateBillPage() {
           id: `item-${Date.now()}-${idx + 1}`,
           bill_id: "",
           item_name: `TMT Steel Rod ${it.size}`,
+          brand: (it.brand || "").trim() || undefined,
           item_category: "rod",
           quantity: kg,
           unit: "KG",
@@ -649,6 +657,7 @@ export default function CreateBillPage() {
         id: `item-${Date.now()}-${idx+1}`,
         bill_id: "",
         item_name: it.name || `${getCategoryConfig(category).shortLabel} Item`,
+        brand: (it.brand || "").trim() || undefined,
         item_category: category,
         quantity: parseFloat(it.qty as any) || 1,
         unit: "UNIT",
@@ -797,7 +806,9 @@ export default function CreateBillPage() {
             {successBill.items.map((it, idx) => (
               <div key={idx} className="flex justify-between items-center text-slate-700">
                 <span className="font-medium">
-                  {it.item_name} <span className="text-slate-400 font-normal">({it.quantity} {it.unit} @ {formatCurrency(it.unit_price)})</span>
+                  {it.item_name}
+                  {it.brand ? <span className="text-blue-700 font-semibold"> ({it.brand})</span> : null}{" "}
+                  <span className="text-slate-400 font-normal">({it.quantity} {it.unit} @ {formatCurrency(it.unit_price)})</span>
                 </span>
                 <span className="font-bold text-slate-900">{formatCurrency(it.total_amount)}</span>
               </div>
@@ -1259,7 +1270,7 @@ export default function CreateBillPage() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                         <div>
                           <label className="block text-[11px] font-bold text-slate-700 mb-1">
                             Rod Size <span className="text-rose-500">*</span>
@@ -1277,6 +1288,19 @@ export default function CreateBillPage() {
                                 </option>
                               ))}
                           </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Brand
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Tata Tiscon, Jindal"
+                            value={item.brand}
+                            onChange={(e) => handleRodItemChange(index, "brand", e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                          />
                         </div>
 
                         <div>
@@ -1380,6 +1404,7 @@ export default function CreateBillPage() {
                 {/* Desktop column header labels */}
                 <div className="hidden sm:flex items-center gap-3 px-3.5 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100/70 rounded-lg border border-slate-200/60">
                   <div className="flex-1">Product Name / Item Description</div>
+                  <div className="w-36">Brand</div>
                   <div className="w-24 text-center">Qty</div>
                   <div className="w-28 text-right">Rate (₹)</div>
                   <div className="w-28 text-right">Subtotal</div>
@@ -1418,6 +1443,20 @@ export default function CreateBillPage() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
+                      </div>
+
+                      {/* Col 2 on desktop / Row 2a on mobile: Brand */}
+                      <div className="sm:w-36 sm:shrink-0">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase sm:hidden mb-1">
+                          Brand
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Brand (e.g. Havells)"
+                          value={item.brand || ""}
+                          onChange={(e) => handleDailyItemChange(idx, "brand", e.target.value)}
+                          className="w-full px-3 py-2 sm:py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50/50 sm:bg-white focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium placeholder:text-slate-400"
+                        />
                       </div>
 
                       {/* Row 2 on mobile / Cols 2-4 on desktop: Qty + Rate + Subtotal */}
