@@ -18,7 +18,9 @@ import {
   LogOut,
   Truck,
   Package,
-  Calculator
+  Calculator,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { getReturns, getStoredUserRole } from "@/lib/storage";
 import { UserRole, AuthUser } from "@/lib/types";
@@ -29,6 +31,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [unverifiedCount, setUnverifiedCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState<UserRole>("owner");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
@@ -147,31 +150,56 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar (1024px and above) */}
-      <aside className="hidden lg:flex w-64 bg-[#14243A] text-white flex-col shrink-0 min-h-screen border-r border-[#0F1A2A] shadow-xl no-print">
-        {/* Brand Header */}
-        <div className="p-4 border-b border-slate-700/60 bg-[#0F1A2A]/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-md text-lg tracking-wider">
+      <aside
+        className={`hidden lg:flex bg-[#14243A] text-white flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen border-r border-[#0F1A2A] shadow-xl no-print transition-all duration-200 ${
+          collapsed ? "w-16" : "w-64"
+        }`}
+      >
+        {/* Brand Header + Collapse Toggle */}
+        <div
+          className={`border-b border-slate-700/60 bg-[#0F1A2A]/80 flex items-center ${
+            collapsed ? "flex-col gap-2 py-3 px-2" : "justify-between p-4"
+          }`}
+        >
+          <div className={`flex items-center gap-3 min-w-0 ${collapsed ? "justify-center" : ""}`}>
+            <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-md text-lg tracking-wider shrink-0">
               TPM
             </div>
-            <div className="leading-tight">
-              <h1 className="font-bold text-sm tracking-tight text-white uppercase">
-                THE PRAMOD MAHARAJ
-              </h1>
-              <p className="text-[11px] font-medium text-blue-300">
-                Enterprises ERP System
-              </p>
-            </div>
+            {!collapsed && (
+              <div className="leading-tight min-w-0">
+                <h1 className="font-bold text-sm tracking-tight text-white uppercase truncate">
+                  THE PRAMOD MAHARAJ
+                </h1>
+                <p className="text-[11px] font-medium text-blue-300 truncate">
+                  Enterprises ERP System
+                </p>
+              </div>
+            )}
           </div>
+          <button
+            type="button"
+            onClick={() => setCollapsed((prev) => !prev)}
+            title={collapsed ? "Expand Sidebar" : "Collapse Sidebar to 64px Rail"}
+            aria-label={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors shrink-0"
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
         {/* Navigation Menu Grouped into Clear Modules */}
-        <nav className="flex-1 px-3 py-2 space-y-3.5 overflow-y-auto">
+        <nav className={`flex-1 py-2 space-y-3.5 overflow-y-auto ${collapsed ? "px-2" : "px-3"}`}>
           {navSections.map((section, sIdx) => (
             <div key={section.title} className={sIdx > 0 ? "pt-2.5 border-t border-slate-800/80" : ""}>
-              <div className="px-3 pb-1 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                {section.title}
-              </div>
+              {!collapsed && (
+                <div className="px-3 pb-1 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                  {section.title}
+                </div>
+              )}
               <div className="space-y-0.5">
                 {section.items.map((link) => {
                   const isActive = pathname === link.href;
@@ -180,7 +208,10 @@ export default function Sidebar() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                      title={link.label}
+                      className={`flex items-center ${
+                        collapsed ? "justify-center px-0 py-2.5" : "justify-between px-3 py-2"
+                      } rounded-lg text-xs font-medium transition-colors relative ${
                         isActive
                           ? "bg-blue-600 text-white shadow-sm font-semibold"
                           : link.highlight
@@ -188,11 +219,11 @@ export default function Sidebar() {
                           : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : link.highlight ? "text-blue-400" : "text-slate-400"}`} />
-                        <span className="truncate">{link.label}</span>
+                        {!collapsed && <span className="truncate">{link.label}</span>}
                       </div>
-                      {link.badge && (
+                      {!collapsed && link.badge && (
                         <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
                           link.badge === "Admin" 
                             ? "bg-slate-700 text-slate-200"
@@ -200,6 +231,9 @@ export default function Sidebar() {
                         }`}>
                           {link.badge}
                         </span>
+                      )}
+                      {collapsed && link.badge && link.badge !== "Admin" && (
+                        <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5" />
                       )}
                     </Link>
                   );
@@ -210,42 +244,64 @@ export default function Sidebar() {
         </nav>
 
         {/* Desktop Sidebar User Profile & Logout Footer */}
-        <div className="p-4 border-t border-slate-700/60 bg-[#0F1A2A]/80 text-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-blue-600/20 text-blue-300 flex items-center justify-center font-bold text-xs border border-blue-500/30 shrink-0">
+        <div className={`border-t border-slate-700/60 bg-[#0F1A2A]/80 text-xs space-y-3 ${collapsed ? "p-2.5" : "p-4"}`}>
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              <Link
+                href="/settings"
+                title={currentUser?.fullName || `${role} Account`}
+                className="w-9 h-9 rounded-full bg-blue-600/20 text-blue-300 flex items-center justify-center font-bold text-xs border border-blue-500/30 hover:bg-blue-600/30 transition-colors"
+              >
                 {role === "owner" ? "PM" : role === "manager" ? "MN" : role === "admin" ? "AD" : "OP"}
-              </div>
-              <div className="leading-tight min-w-0">
-                <div className="text-xs font-semibold text-white truncate">
-                  {currentUser?.fullName || (role === "owner" ? "Pramod Maharaj" : `${role.toUpperCase()} User`)}
-                </div>
-                <div className="text-[10px] text-slate-400 capitalize flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-blue-400" />
-                  <span>{role} Account</span>
-                </div>
-              </div>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Sign Out of TPM ERP"
+                className="p-2 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-600/20 text-blue-300 flex items-center justify-center font-bold text-xs border border-blue-500/30 shrink-0">
+                    {role === "owner" ? "PM" : role === "manager" ? "MN" : role === "admin" ? "AD" : "OP"}
+                  </div>
+                  <div className="leading-tight min-w-0">
+                    <div className="text-xs font-semibold text-white truncate">
+                      {currentUser?.fullName || (role === "owner" ? "Pramod Maharaj" : `${role.toUpperCase()} User`)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 capitalize flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-blue-400" />
+                      <span>{role} Account</span>
+                    </div>
+                  </div>
+                </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Sign Out of TPM ERP"
-              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  title="Sign Out of TPM ERP"
+                  className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
 
-          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
-            <span>Book: FY 2026-27</span>
-            <Link
-              href="/settings"
-              className="text-blue-400 hover:text-blue-300 font-medium hover:underline"
-            >
-              Settings
-            </Link>
-          </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                <span>Book: FY 2026-27</span>
+                <Link
+                  href="/settings"
+                  className="text-blue-400 hover:text-blue-300 font-medium hover:underline"
+                >
+                  Settings
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </aside>
 

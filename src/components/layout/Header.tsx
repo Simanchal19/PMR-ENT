@@ -39,7 +39,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-2xs no-print">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-2xs no-print">
       {/* Desktop Header (1024px and above) */}
       <div className="hidden lg:flex h-16 px-6 items-center justify-between">
         {/* Left: Organization Title */}
