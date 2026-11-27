@@ -33,10 +33,30 @@ import {
   UserPlus,
   Phone,
   MapPin,
-  Edit2
+  Edit2,
+  Layers,
+  Package,
+  Hammer,
+  Droplet,
+  Wrench,
+  Paintbrush,
+  Cog,
+  Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { CementBrandManagerModal, RodSizeManagerModal } from "@/components/admin/MasterCatalogModals";
+
+const CATEGORY_ICONS: Record<BillCategory, any> = {
+  mix: Layers,
+  cement: Package,
+  rod: Hammer,
+  daily: Zap,
+  plumbing: Droplet,
+  hardware: Wrench,
+  paints: Paintbrush,
+  machinery: Cog,
+  ceramic: Sparkles,
+};
 
 export default function CreateBillPage() {
   const router = useRouter();
@@ -45,6 +65,9 @@ export default function CreateBillPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const cementFirstRefs = useRef<(HTMLSelectElement | null)[]>([]);
+  const rodFirstRefs = useRef<(HTMLSelectElement | null)[]>([]);
+  const dailyFirstRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [category, setCategory] = useState<BillCategory>("mix");
   const [billDate, setBillDate] = useState(getTodayDateString());
@@ -760,7 +783,7 @@ export default function CreateBillPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
         <div className="flex items-center gap-3">
@@ -852,234 +875,234 @@ export default function CreateBillPage() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-          {/* Category Selector Tabs */}
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Select Product Category
-              </label>
-              <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
-                9 Active Categories · Mix &amp; Misc at top
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-              {BILL_CATEGORIES.map((c) => (
-                <button
-                  type="button"
-                  key={c.id}
-                  onClick={() => setCategory(c.id)}
-                  className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all ${
-                    category === c.id
-                      ? "bg-white border-blue-600 ring-2 ring-blue-500/20 shadow-xs"
-                      : "bg-white/60 border-slate-200 hover:bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <span className={`font-bold text-xs ${category === c.id ? "text-blue-600" : "text-slate-800"}`}>
-                      {c.label}
-                    </span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0 font-bold">
-                      {c.prefix}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">{c.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-6 space-y-6">
-            {/* Customer & Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Dynamic Searchable Combobox for Customer */}
-              <div className="space-y-1.5 relative" ref={dropdownRef}>
-                <div className="flex items-center justify-between">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* LEFT COLUMN (~70% / 8 cols): Main Billing Form */}
+          <div className="lg:col-span-8 space-y-4 min-w-0">
+            {/* Top Bar Card: Customer / Party Name + Quick Pills + Bill Date */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                {/* Customer Search + Pill Actions */}
+                <div className="md:col-span-8 space-y-1.5 relative" ref={dropdownRef}>
                   <label className="block text-xs font-bold text-slate-700">
                     Customer / Party Name <span className="text-rose-500">*</span>
                   </label>
-                  <div className="flex items-center gap-2.5">
+
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        value={customerSearch}
+                        onFocus={() => setIsDropdownOpen(true)}
+                        onChange={(e) => {
+                          setCustomerSearch(e.target.value);
+                          setSelectedCustomerId("");
+                          setIsDropdownOpen(true);
+                        }}
+                        placeholder="e.g. Sahu, Shree, Saroj..."
+                        className={`w-full pl-9 pr-8 py-2 text-xs rounded-lg border font-semibold bg-white transition-all focus:outline-none focus:ring-2 ${
+                          selectedCustomerId
+                            ? "border-emerald-400 ring-2 ring-emerald-500/20 text-slate-900"
+                            : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 text-slate-800"
+                        }`}
+                      />
+
+                      {customerSearch ? (
+                        <button
+                          type="button"
+                          onClick={handleClearCustomer}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100"
+                          title="Clear customer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      )}
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => handleOpenAddCustomerModal(customerSearch)}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 text-xs font-bold whitespace-nowrap transition-colors shrink-0"
                       title="Add a new customer with mobile, address & opening balance"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
                       <span>New Party</span>
                     </button>
+
                     <button
                       type="button"
                       onClick={handleSelectUnknownCustomer}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 hover:border-amber-300 text-xs font-bold whitespace-nowrap transition-colors shrink-0"
                       title="Select Walk-in / Cash Counter Retail Party"
                     >
-                      <Zap className="w-3 h-3 text-amber-500" />
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
                       <span>Retail (UNKNOWN)</span>
                     </button>
                   </div>
-                </div>
 
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    value={customerSearch}
-                    onFocus={() => setIsDropdownOpen(true)}
-                    onChange={(e) => {
-                      setCustomerSearch(e.target.value);
-                      setSelectedCustomerId("");
-                      setIsDropdownOpen(true);
-                    }}
-                    placeholder="Type name (e.g. type 'S' for Sahu, Shree, Saroj...)"
-                    className={`w-full pl-9 pr-9 py-2.5 text-xs rounded-lg border font-semibold bg-white transition-all focus:outline-none focus:ring-2 ${
-                      selectedCustomerId
-                        ? "border-emerald-400 ring-2 ring-emerald-500/20 text-slate-900"
-                        : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 text-slate-800"
-                    }`}
-                  />
+                  {/* Autocomplete Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-xl border border-slate-200 shadow-2xl max-h-64 overflow-y-auto divide-y divide-slate-100">
+                      <div className="p-2 bg-slate-50 text-[11px] font-semibold text-slate-600 flex items-center justify-between border-b border-slate-200 sticky top-0">
+                        <span>Matching Customers ({matchingCustomers.length})</span>
+                        <span className="text-[10px] text-slate-400">Click any party to select</span>
+                      </div>
 
-                  {customerSearch ? (
-                    <button
-                      type="button"
-                      onClick={handleClearCustomer}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100"
-                      title="Clear customer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  ) : (
-                    <ChevronDown className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      {customerSearch.trim() && !customers.some(c => c.name.toLowerCase() === customerSearch.trim().toLowerCase()) && (
+                        <div className="p-2.5 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between gap-2">
+                          <span className="text-xs text-blue-900 font-medium truncate">
+                            Party not in list: <strong className="font-bold">&quot;{customerSearch.trim().toUpperCase()}&quot;</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCreateNewParty(customerSearch)}
+                            className="shrink-0 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold shadow-xs transition-colors"
+                          >
+                            + Add New Party
+                          </button>
+                        </div>
+                      )}
+
+                      {matchingCustomers.length > 0 ? (
+                        matchingCustomers.map((c) => {
+                          const isMatchPrefix = customerSearch.trim() && c.name.toLowerCase().startsWith(customerSearch.trim().toLowerCase());
+                          return (
+                            <button
+                              type="button"
+                              key={c.id}
+                              onClick={() => handleSelectCustomer(c)}
+                              className={`w-full text-left p-2.5 hover:bg-blue-50/80 transition-colors flex items-center justify-between text-xs ${
+                                selectedCustomerId === c.id ? "bg-blue-50 font-bold" : ""
+                              }`}
+                            >
+                              <div>
+                                <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                  <span className={isMatchPrefix ? "text-blue-700 underline underline-offset-2" : ""}>
+                                    {c.name}
+                                  </span>
+                                  {c.is_unidentified && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-normal">
+                                      Retail Cash
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                  {c.phone && <span>📞 {c.phone}</span>}
+                                  {c.address && <span>• {c.address}</span>}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0 ml-2">
+                                <span className={`text-[11px] font-semibold ${c.current_balance > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                                  Due: {formatCurrency(c.current_balance)}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : customerSearch.trim() ? (
+                        <div className="p-4 text-center text-xs text-slate-500">
+                          <p>No customer found matching &quot;<strong>{customerSearch}</strong>&quot;.</p>
+                          <button
+                            type="button"
+                            onClick={() => handleCreateNewParty(customerSearch)}
+                            className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Create &quot;{customerSearch.trim().toUpperCase()}&quot;</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-xs text-slate-400">
+                          <p className="font-semibold text-slate-600">No party accounts yet.</p>
+                          <p className="mt-1 text-[11px]">Type customer name to create on the fly, or click &quot;Retail (UNKNOWN)&quot;.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Selected Confirmation Details Card */}
+                  {selectedCustomer && (
+                    <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200/80 text-xs flex items-center justify-between mt-1">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <div>
+                          <div className="font-bold text-emerald-950">{selectedCustomer.name}</div>
+                          <div className="text-[11px] text-emerald-700">
+                            {selectedCustomer.phone || selectedCustomer.code || "Registered Customer"}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="font-bold text-emerald-800 text-xs">
+                        Ledger Due: {formatCurrency(selectedCustomer.current_balance)}
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                {/* Autocomplete Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-xl border border-slate-200 shadow-2xl max-h-64 overflow-y-auto divide-y divide-slate-100">
-                    <div className="p-2 bg-slate-50 text-[11px] font-semibold text-slate-600 flex items-center justify-between border-b border-slate-200 sticky top-0">
-                      <span>Matching Customers ({matchingCustomers.length})</span>
-                      <span className="text-[10px] text-slate-400">Click any party to select</span>
-                    </div>
-
-                    {/* Quick Add Party if not exists */}
-                    {customerSearch.trim() && !customers.some(c => c.name.toLowerCase() === customerSearch.trim().toLowerCase()) && (
-                      <div className="p-2.5 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between gap-2">
-                        <span className="text-xs text-blue-900 font-medium truncate">
-                          Party not in list: <strong className="font-bold">&quot;{customerSearch.trim().toUpperCase()}&quot;</strong>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCreateNewParty(customerSearch)}
-                          className="shrink-0 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold shadow-xs transition-colors"
-                        >
-                          + Add New Party
-                        </button>
-                      </div>
-                    )}
-
-                    {matchingCustomers.length > 0 ? (
-                      matchingCustomers.map((c) => {
-                        const isMatchPrefix = customerSearch.trim() && c.name.toLowerCase().startsWith(customerSearch.trim().toLowerCase());
-                        return (
-                          <button
-                            type="button"
-                            key={c.id}
-                            onClick={() => handleSelectCustomer(c)}
-                            className={`w-full text-left p-2.5 hover:bg-blue-50/80 transition-colors flex items-center justify-between text-xs ${
-                              selectedCustomerId === c.id ? "bg-blue-50 font-bold" : ""
-                            }`}
-                          >
-                            <div>
-                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                <span className={isMatchPrefix ? "text-blue-700 underline underline-offset-2" : ""}>
-                                  {c.name}
-                                </span>
-                                {c.is_unidentified && (
-                                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-normal">
-                                    Retail Cash
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                                {c.phone && <span>📞 {c.phone}</span>}
-                                {c.address && <span>• {c.address}</span>}
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0 ml-2">
-                              <span className={`text-[11px] font-semibold ${c.current_balance > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                                Due: {formatCurrency(c.current_balance)}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })
-                    ) : customerSearch.trim() ? (
-                      <div className="p-4 text-center text-xs text-slate-500">
-                        <p>No customer found matching &quot;<strong>{customerSearch}</strong>&quot;.</p>
-                        <button
-                          type="button"
-                          onClick={() => handleCreateNewParty(customerSearch)}
-                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Create &quot;{customerSearch.trim().toUpperCase()}&quot;</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-xs text-slate-400">
-                        <p className="font-semibold text-slate-600">No party accounts yet.</p>
-                        <p className="mt-1 text-[11px]">Type customer name to create on the fly, or click &quot;Quick: Retail (UNKNOWN)&quot;.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Selected Confirmation Details Card */}
-                {selectedCustomer && (
-                  <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200/80 text-xs flex items-center justify-between mt-1">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <div>
-                        <div className="font-bold text-emerald-950">{selectedCustomer.name}</div>
-                        <div className="text-[11px] text-emerald-700">
-                          {selectedCustomer.phone || selectedCustomer.code || "Registered Customer"}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="font-bold text-emerald-800 text-xs">
-                      Ledger Due: {formatCurrency(selectedCustomer.current_balance)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Bill Date <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={billDate}
-                  onChange={(e) => setBillDate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">Defaulted to today ({billDate})</p>
+                {/* Bill Date */}
+                <div className="md:col-span-4 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Bill Date <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={billDate}
+                    onChange={(e) => setBillDate(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                  <p className="text-[11px] text-slate-400">Defaulted to today ({billDate})</p>
+                </div>
               </div>
             </div>
 
-            {/* Category Form Details */}
+            {/* Compact Horizontal Category Pill Tabs */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider px-0.5">
+                Select Product Category
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                {BILL_CATEGORIES.map((c) => {
+                  const Icon = CATEGORY_ICONS[c.id] || Layers;
+                  const isActive = category === c.id;
+                  return (
+                    <button
+                      type="button"
+                      key={c.id}
+                      onClick={() => setCategory(c.id)}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        isActive
+                          ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
+                      <span>{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Item Entry Section — Dense Table Layout */}
             {category === "cement" && (
-              <div className="p-4 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-emerald-200/70">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-                      Cement Specifications (Manual Entry)
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                      {cementItems.length} {cementItems.length === 1 ? "Brand" : "Brands"}
-                    </span>
+              <div className="bg-white rounded-2xl border border-emerald-200 shadow-2xs overflow-hidden">
+                <div className="px-4 py-3 bg-emerald-50/60 border-b border-emerald-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                        Cement Specifications (Manual Entry)
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {cementItems.length} {cementItems.length === 1 ? "Brand" : "Brands"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700/80 mt-0.5">
+                      {getCategoryConfig("cement").desc} · Press Enter on Rate to add next row
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-emerald-700 font-medium hidden sm:inline">
@@ -1089,7 +1112,7 @@ export default function CreateBillPage() {
                       <button
                         type="button"
                         onClick={() => setShowCementModal(true)}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded transition-colors"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition-colors"
                         title="Admin: Edit, Add or Remove Cement Brands"
                       >
                         <Settings2 className="w-3 h-3" />
@@ -1099,133 +1122,132 @@ export default function CreateBillPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {cementItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="p-3.5 rounded-xl bg-white border border-emerald-200 shadow-2xs space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">
-                            {index + 1}
-                          </span>
-                          <span>Cement Item #{index + 1}</span>
-                        </span>
-                        {cementItems.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveCementItem(index)}
-                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
-                            title="Remove this item"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Remove</span>
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Cement Brand <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={item.brand}
-                            onChange={(e) => handleCementItemChange(index, "brand", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                          >
-                            {cementBrands
-                              .filter((b) => b.isActive || b.name === item.brand)
-                              .map((b) => (
-                                <option key={b.id} value={b.name}>
-                                  {b.name}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Quantity (Bags) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            required
-                            placeholder="e.g. 50"
-                            value={item.bags}
-                            onChange={(e) => handleCementItemChange(index, "bags", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Unit Rate per Bag (₹) <span className="text-rose-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
-                              ₹
-                            </span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[580px]">
+                    <thead className="bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3">Cement Brand <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-36 text-center">Quantity (Bags) <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-40 text-right">Unit Rate / Bag (₹) <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-32 text-right">Item Total (₹)</th>
+                        <th className="py-2.5 px-2 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {cementItems.map((item, index) => (
+                        <tr key={item.id} className="hover:bg-emerald-50/20">
+                          <td className="py-2 px-3 text-center font-bold text-slate-500">{index + 1}</td>
+                          <td className="py-2 px-3">
+                            <select
+                              ref={(el) => { cementFirstRefs.current[index] = el; }}
+                              value={item.brand}
+                              onChange={(e) => handleCementItemChange(index, "brand", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                            >
+                              {cementBrands
+                                .filter((b) => b.isActive || b.name === item.brand)
+                                .map((b) => (
+                                  <option key={b.id} value={b.name}>
+                                    {b.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </td>
+                          <td className="py-2 px-3">
                             <input
                               type="number"
-                              step="0.5"
                               min="1"
+                              step="1"
                               required
-                              placeholder="e.g. 340"
-                              value={item.rate}
-                              onChange={(e) => handleCementItemChange(index, "rate", e.target.value)}
-                              className="w-full pl-6 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              placeholder="e.g. 50"
+                              value={item.bags}
+                              onChange={(e) => handleCementItemChange(index, "bags", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                             />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Item Total (₹)
-                          </label>
-                          <div className="w-full px-3 py-2 text-xs rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 font-black flex items-center justify-between">
-                            <span>₹</span>
-                            <span>{formatCurrency(item.amount, false)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="1"
+                                required
+                                placeholder="e.g. 340"
+                                value={item.rate}
+                                onChange={(e) => handleCementItemChange(index, "rate", e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const nextIdx = cementItems.length;
+                                    handleAddCementItem();
+                                    setTimeout(() => cementFirstRefs.current[nextIdx]?.focus(), 20);
+                                  }
+                                }}
+                                className="w-full pl-6 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono font-black text-emerald-950">
+                            {formatCurrency(item.amount, false)}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {cementItems.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCementItem(index)}
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* Add Another Cement Item + Subtotal Summary */}
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-emerald-200/80">
+                <div className="px-4 py-3 bg-emerald-50/40 border-t border-emerald-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <button
                     type="button"
-                    onClick={handleAddCementItem}
+                    onClick={() => {
+                      const nextIdx = cementItems.length;
+                      handleAddCementItem();
+                      setTimeout(() => cementFirstRefs.current[nextIdx]?.focus(), 20);
+                    }}
                     className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors self-start"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>+ Add Another Cement Brand / Item</span>
+                    <span>Add Another Item</span>
                   </button>
 
-                  <div className="text-right text-xs text-emerald-950 font-semibold bg-emerald-100/70 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between sm:justify-end gap-3">
+                  <div className="text-right text-xs text-emerald-950 font-semibold bg-white px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center justify-between sm:justify-end gap-3">
                     <span>Total: <strong className="font-black text-emerald-900">{totalCementBags} Bags</strong></span>
-                    <span className="text-emerald-400">|</span>
-                    <span>Cement Subtotal: <strong className="font-black text-emerald-900">{formatCurrency(cementTotal)}</strong></span>
+                    <span className="text-emerald-300">|</span>
+                    <span>Subtotal: <strong className="font-black text-emerald-900">{formatCurrency(cementTotal)}</strong></span>
                   </div>
                 </div>
               </div>
             )}
 
             {category === "rod" && (
-              <div className="p-4 rounded-xl bg-amber-50/40 border border-amber-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-amber-200/70">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
-                      Rod / Steel Specifications (Manual Entry)
-                    </span>
-                    <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                      {rodItems.length} {rodItems.length === 1 ? "Size" : "Sizes"}
-                    </span>
+              <div className="bg-white rounded-2xl border border-amber-200 shadow-2xs overflow-hidden">
+                <div className="px-4 py-3 bg-amber-50/60 border-b border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                        Rod / Steel Specifications (Manual Entry)
+                      </span>
+                      <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                        {rodItems.length} {rodItems.length === 1 ? "Size" : "Sizes"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-700/80 mt-0.5">
+                      {getCategoryConfig("rod").desc} · Press Enter on Rate to add next row
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-amber-700 font-medium hidden sm:inline">
@@ -1235,7 +1257,7 @@ export default function CreateBillPage() {
                       <button
                         type="button"
                         onClick={() => setShowRodModal(true)}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded transition-colors"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors"
                         title="Admin: Edit, Add or Remove Rod Sizes & Rates"
                       >
                         <Settings2 className="w-3 h-3" />
@@ -1245,138 +1267,129 @@ export default function CreateBillPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {rodItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="p-3.5 rounded-xl bg-white border border-amber-200 shadow-2xs space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">
-                            {index + 1}
-                          </span>
-                          <span>Rod / Steel Item #{index + 1}</span>
-                        </span>
-                        {rodItems.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveRodItem(index)}
-                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
-                            title="Remove this item"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Remove</span>
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Rod Size <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={item.size}
-                            onChange={(e) => handleRodItemChange(index, "size", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                          >
-                            {rodSizes
-                              .filter((s) => s.isActive || s.size === item.size)
-                              .map((s) => (
-                                <option key={s.id} value={s.size}>
-                                  {s.size}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Brand
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Tata Tiscon, Jindal"
-                            value={item.brand}
-                            onChange={(e) => handleRodItemChange(index, "brand", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Quantity (Kg) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.001"
-                            min="0.1"
-                            required
-                            placeholder="e.g. 21"
-                            value={item.kg}
-                            onChange={(e) => handleRodItemChange(index, "kg", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Rate per Kg (₹) <span className="text-rose-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
-                              ₹
-                            </span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[660px]">
+                    <thead className="bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3 w-32">Rod Size <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3">Brand</th>
+                        <th className="py-2.5 px-3 w-32 text-center">Quantity (Kg) <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-36 text-right">Rate / Kg (₹) <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-32 text-right">Item Total (₹)</th>
+                        <th className="py-2.5 px-2 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {rodItems.map((item, index) => (
+                        <tr key={item.id} className="hover:bg-amber-50/20">
+                          <td className="py-2 px-3 text-center font-bold text-slate-500">{index + 1}</td>
+                          <td className="py-2 px-3">
+                            <select
+                              ref={(el) => { rodFirstRefs.current[index] = el; }}
+                              value={item.size}
+                              onChange={(e) => handleRodItemChange(index, "size", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                            >
+                              {rodSizes
+                                .filter((s) => s.isActive || s.size === item.size)
+                                .map((s) => (
+                                  <option key={s.id} value={s.size}>
+                                    {s.size}
+                                  </option>
+                                ))}
+                            </select>
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="text"
+                              placeholder="e.g. Tata Tiscon, Jindal"
+                              value={item.brand}
+                              onChange={(e) => handleRodItemChange(index, "brand", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
                             <input
                               type="number"
-                              step="0.1"
-                              min="1"
+                              step="0.001"
+                              min="0.1"
                               required
-                              placeholder="e.g. 120"
-                              value={item.rate}
-                              onChange={(e) => handleRodItemChange(index, "rate", e.target.value)}
-                              className="w-full pl-6 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                              placeholder="e.g. 21"
+                              value={item.kg}
+                              onChange={(e) => handleRodItemChange(index, "kg", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                             />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Item Total (₹)
-                          </label>
-                          <div className="w-full px-3 py-2 text-xs rounded-lg bg-amber-50 border border-amber-200 text-amber-950 font-black flex items-center justify-between">
-                            <span>₹</span>
-                            <span>{formatCurrency(item.amount, false)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="1"
+                                required
+                                placeholder="e.g. 120"
+                                value={item.rate}
+                                onChange={(e) => handleRodItemChange(index, "rate", e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const nextIdx = rodItems.length;
+                                    handleAddRodItem();
+                                    setTimeout(() => rodFirstRefs.current[nextIdx]?.focus(), 20);
+                                  }
+                                }}
+                                className="w-full pl-6 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono font-black text-amber-950">
+                            {formatCurrency(item.amount, false)}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {rodItems.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveRodItem(index)}
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* Add Another Rod Item + Subtotal Summary */}
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-amber-200/80">
+                <div className="px-4 py-3 bg-amber-50/40 border-t border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <button
                     type="button"
-                    onClick={handleAddRodItem}
+                    onClick={() => {
+                      const nextIdx = rodItems.length;
+                      handleAddRodItem();
+                      setTimeout(() => rodFirstRefs.current[nextIdx]?.focus(), 20);
+                    }}
                     className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors self-start"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>+ Add Another Rod Size / Item</span>
+                    <span>Add Another Item</span>
                   </button>
 
-                  <div className="text-right text-xs text-amber-950 font-semibold bg-amber-100/70 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-between sm:justify-end gap-3">
+                  <div className="text-right text-xs text-amber-950 font-semibold bg-white px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-between sm:justify-end gap-3">
                     <span>Total: <strong className="font-black text-amber-900">{totalRodKg.toFixed(2)} Kg</strong></span>
-                    <span className="text-amber-400">|</span>
-                    <span>Rod Subtotal: <strong className="font-black text-amber-900">{formatCurrency(rodTotal)}</strong></span>
+                    <span className="text-amber-300">|</span>
+                    <span>Subtotal: <strong className="font-black text-amber-900">{formatCurrency(rodTotal)}</strong></span>
                   </div>
                 </div>
               </div>
             )}
 
             {category !== "cement" && category !== "rod" && (
-              <div className="p-4 rounded-xl bg-blue-50/40 border border-blue-200 space-y-4">
+              <div className="bg-white rounded-2xl border border-blue-200 shadow-2xs overflow-hidden">
                 <datalist id="sales-hardware-catalog">
                   {hardwareItems.map((h) => (
                     <option key={h.id} value={h.name}>
@@ -1385,165 +1398,169 @@ export default function CreateBillPage() {
                   ))}
                 </datalist>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-blue-200/70">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">
-                      {getCategoryConfig(category).label} Specifications (Manual Entry)
-                    </span>
-                    <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full">
-                      {dailyItems.length} {dailyItems.length === 1 ? "Item" : "Items"}
-                    </span>
+                <div className="px-4 py-3 bg-blue-50/50 border-b border-blue-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-blue-950 uppercase tracking-wider">
+                        {getCategoryConfig(category).label} Specifications (Manual Entry)
+                      </span>
+                      <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full">
+                        {dailyItems.length} {dailyItems.length === 1 ? "Item" : "Items"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-blue-700/80 mt-0.5">
+                      {getCategoryConfig(category).desc} · Press Enter on Unit Rate to add next row
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-blue-700 font-medium hidden sm:inline">
-                      Qty × Rate = Line Total
-                    </span>
-                  </div>
+                  <span className="text-[11px] text-blue-700 font-medium hidden sm:inline">
+                    Qty × Rate = Line Total
+                  </span>
                 </div>
 
-                <div className="space-y-3">
-                  {dailyItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-xl bg-white border border-blue-200 shadow-2xs space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-black">
-                            {idx + 1}
-                          </span>
-                          <span>{getCategoryConfig(category).shortLabel} Item #{idx + 1}</span>
-                        </span>
-                        {dailyItems.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDailyItem(idx)}
-                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold"
-                            title="Remove this item"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Remove</span>
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
-                        <div className="sm:col-span-2">
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Product Name / Item Description <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            list="sales-hardware-catalog"
-                            placeholder="e.g. Anchor 16A Switch / 2.5mm Wire"
-                            value={item.name}
-                            onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Brand
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Havells"
-                            value={item.brand || ""}
-                            onChange={(e) => handleDailyItemChange(idx, "brand", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Quantity <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            required
-                            placeholder="e.g. 5"
-                            value={item.qty}
-                            onChange={(e) => handleDailyItemChange(idx, "qty", e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Unit Rate (₹) <span className="text-rose-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
-                              ₹
-                            </span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[660px]">
+                    <thead className="bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3">Product Name / Description <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-36">Brand</th>
+                        <th className="py-2.5 px-3 w-24 text-center">Quantity <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-32 text-right">Unit Rate (₹) <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-3 w-32 text-right">Item Total (₹)</th>
+                        <th className="py-2.5 px-2 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {dailyItems.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-blue-50/20">
+                          <td className="py-2 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
+                          <td className="py-2 px-3">
+                            <input
+                              ref={(el) => { dailyFirstRefs.current[idx] = el; }}
+                              type="text"
+                              required
+                              list="sales-hardware-catalog"
+                              placeholder="e.g. Anchor 16A Switch / 2.5mm Wire"
+                              value={item.name}
+                              onChange={(e) => handleDailyItemChange(idx, "name", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="text"
+                              placeholder="e.g. Havells"
+                              value={item.brand || ""}
+                              onChange={(e) => handleDailyItemChange(idx, "brand", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
                             <input
                               type="number"
-                              step="0.1"
-                              min="0"
+                              min="1"
+                              step="1"
                               required
-                              placeholder="e.g. 250"
-                              value={item.rate}
-                              onChange={(e) => handleDailyItemChange(idx, "rate", e.target.value)}
-                              className="w-full pl-6 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                              placeholder="e.g. 5"
+                              value={item.qty}
+                              onChange={(e) => handleDailyItemChange(idx, "qty", e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
                             />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Item Total (₹)
-                          </label>
-                          <div className="w-full px-3 py-2 text-xs rounded-lg bg-blue-50 border border-blue-200 text-blue-950 font-black flex items-center justify-between">
-                            <span>₹</span>
-                            <span>{formatCurrency(item.amount, false)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                required
+                                placeholder="e.g. 250"
+                                value={item.rate}
+                                onChange={(e) => handleDailyItemChange(idx, "rate", e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const nextIdx = dailyItems.length;
+                                    handleAddDailyItem();
+                                    setTimeout(() => dailyFirstRefs.current[nextIdx]?.focus(), 20);
+                                  }
+                                }}
+                                className="w-full pl-6 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono font-black text-blue-950">
+                            {formatCurrency(item.amount, false)}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {dailyItems.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDailyItem(idx)}
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* Add Another Item + Subtotal Summary */}
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-blue-200/80">
+                <div className="px-4 py-3 bg-blue-50/40 border-t border-blue-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <button
                     type="button"
-                    onClick={handleAddDailyItem}
+                    onClick={() => {
+                      const nextIdx = dailyItems.length;
+                      handleAddDailyItem();
+                      setTimeout(() => dailyFirstRefs.current[nextIdx]?.focus(), 20);
+                    }}
                     className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors self-start"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>+ Add Another Product / Item</span>
+                    <span>Add Another Item</span>
                   </button>
 
-                  <div className="text-right text-xs text-blue-950 font-semibold bg-blue-100/70 px-3 py-1.5 rounded-lg border border-blue-200 flex items-center justify-between sm:justify-end gap-3">
+                  <div className="text-right text-xs text-blue-950 font-semibold bg-white px-3 py-1.5 rounded-lg border border-blue-200 flex items-center justify-between sm:justify-end gap-3">
                     <span>Total: <strong className="font-black text-blue-900">{totalDailyQty} {totalDailyQty === 1 ? "Unit" : "Units"}</strong></span>
-                    <span className="text-blue-400">|</span>
-                    <span>{getCategoryConfig(category).shortLabel} Subtotal: <strong className="font-black text-blue-900">{formatCurrency(dailyTotal)}</strong></span>
+                    <span className="text-blue-300">|</span>
+                    <span>Subtotal: <strong className="font-black text-blue-900">{formatCurrency(dailyTotal)}</strong></span>
                   </div>
                 </div>
               </div>
             )}
+          </div>
 
-            {/* Additional Charges: Labour & Transport Costs */}
-            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Truck className="w-4 h-4 text-blue-600" />
-                  <span>Labour & Transport Charges (Optional)</span>
-                </label>
-                <span className="text-[11px] text-slate-500 hidden sm:inline font-medium">
-                  Added to bill total and charged to customer
+          {/* RIGHT COLUMN (~30% / 4 cols): Sticky Summary Card */}
+          <aside className="lg:col-span-4 lg:sticky lg:top-20">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                  Bill Summary
+                </h2>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryConfig(category).badgeClass}`}>
+                  {getCategoryConfig(category).shortLabel}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Labour Cost */}
+              {/* Items Subtotal */}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-600 font-medium">Items Subtotal</span>
+                <span className="font-bold text-slate-900 font-mono text-sm">
+                  {formatCurrency(goodsSubtotal)}
+                </span>
+              </div>
+
+              {/* Labour & Transport Charges */}
+              <div className="space-y-3 pt-1">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Labour Charge (₹)
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Labour Charge (₹)</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Optional</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
@@ -1556,18 +1573,15 @@ export default function CreateBillPage() {
                       placeholder="0.00"
                       value={labourCost}
                       onChange={(e) => setLabourCost(e.target.value)}
-                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    Loading, unloading, or labour charges
-                  </span>
                 </div>
 
-                {/* Transport Cost */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Transport Charge (₹)
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Transport Charge (₹)</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Optional</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
@@ -1580,64 +1594,59 @@ export default function CreateBillPage() {
                       placeholder="0.00"
                       value={transportCost}
                       onChange={(e) => setTransportCost(e.target.value)}
-                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    Vehicle, freight, tractor or auto delivery charges
-                  </span>
                 </div>
               </div>
-            </div>
 
-            {/* Total Display & Actions */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase">Total Invoice Value</span>
-                <div className="text-2xl font-black text-blue-700">
+              {/* Grand Total */}
+              <div className="pt-3 border-t border-slate-200 space-y-1">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Total Invoice Value
+                </div>
+                <div className="text-2xl font-black text-blue-700 font-mono tracking-tight">
                   {formatCurrency(currentTotal)}
                 </div>
                 {(labourVal > 0 || transportVal > 0) && (
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                    <span>Goods: <strong className="text-slate-800">{formatCurrency(goodsSubtotal)}</strong></span>
-                    {labourVal > 0 && (
-                      <span>• Labour Charge: <strong className="text-slate-800">+{formatCurrency(labourVal)}</strong></span>
-                    )}
-                    {transportVal > 0 && (
-                      <span>• Transport Charge: <strong className="text-slate-800">+{formatCurrency(transportVal)}</strong></span>
-                    )}
+                  <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-2">
+                    {labourVal > 0 && <span>+Labour: {formatCurrency(labourVal)}</span>}
+                    {transportVal > 0 && <span>+Transport: {formatCurrency(transportVal)}</span>}
                   </div>
-                )}
-                {!selectedCustomerId && (
-                  <span className="text-[11px] text-amber-600 font-medium block mt-0.5">
-                    ⚠️ Select customer to enable posting
-                  </span>
-                )}
-                {selectedCustomerId && goodsSubtotal <= 0 && (
-                  <span className="text-[11px] text-slate-500 block mt-0.5">
-                    Enter quantity & unit rate to calculate total
-                  </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/sales"
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </Link>
+              {/* Validation Alert */}
+              {!selectedCustomerId && (
+                <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
+                  ⚠️ Select customer to enable posting
+                </div>
+              )}
+              {selectedCustomerId && goodsSubtotal <= 0 && (
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-medium">
+                  Enter quantity &amp; unit rate to calculate total
+                </div>
+              )}
+
+              {/* Save / Cancel Actions */}
+              <div className="space-y-2 pt-1">
                 <button
                   type="submit"
                   disabled={!selectedCustomerId || currentTotal <= 0 || goodsSubtotal <= 0}
-                  className="flex items-center gap-1.5 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   <span>{editingBill ? "Update & Save Invoice" : "Post Bill & Save"}</span>
                 </button>
+                <Link
+                  href="/sales"
+                  className="w-full block text-center px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </Link>
               </div>
             </div>
-          </div>
+          </aside>
         </form>
       )}
 

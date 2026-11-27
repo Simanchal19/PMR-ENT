@@ -105,7 +105,7 @@ export default function Sidebar() {
       ],
     },
     {
-      title: "Eastimate",
+      title: "Estimate",
       items: [
         { href: "/estimate", label: "House Cost Estimate", icon: Calculator, highlight: true },
       ],

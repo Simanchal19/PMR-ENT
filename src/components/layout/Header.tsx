@@ -6,7 +6,7 @@ import Link from "next/link";
 import { UserRole, AuthUser } from "@/lib/types";
 import { getStoredUserRole } from "@/lib/storage";
 import { getClientSession, signOutUser } from "@/lib/auth";
-import { Menu, Settings, LogOut } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
@@ -54,33 +54,13 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Right: User Profile Badge, Settings & Logout */}
+        {/* Right: Logout */}
         <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/settings"
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors"
-            title="Account & System Settings"
-          >
-            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs border border-blue-200 shrink-0">
-              {role === "owner" ? "PM" : role === "manager" ? "MN" : role === "admin" ? "AD" : "OP"}
-            </div>
-            <div className="leading-tight text-left">
-              <div className="text-xs font-bold text-slate-800">
-                {currentUser?.fullName || (role === "owner" ? "Pramod Maharaj" : `${role.toUpperCase()} User`)}
-              </div>
-              <div className="text-[10px] text-slate-500 font-medium capitalize flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>{role} Account</span>
-              </div>
-            </div>
-            <Settings className="w-3.5 h-3.5 text-slate-400 ml-1" />
-          </Link>
-
           <button
             type="button"
             onClick={handleLogout}
             title="Sign out of TPM ERP"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-700 text-xs font-semibold transition-colors shadow-2xs ml-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-700 text-xs font-semibold transition-colors shadow-2xs"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Logout</span>
