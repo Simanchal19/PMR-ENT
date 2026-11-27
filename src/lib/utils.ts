@@ -68,12 +68,134 @@ export function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+import { BillCategory } from "./types";
+
+export interface CategoryConfig {
+  id: BillCategory;
+  label: string;
+  shortLabel: string;
+  desc: string;
+  prefix: string;
+  purchasePrefix: string;
+  color: string;
+  badgeClass: string;
+}
+
+export const BILL_CATEGORIES: CategoryConfig[] = [
+  {
+    id: "mix",
+    label: "Mix & Miscellaneous",
+    shortLabel: "Mix & Misc",
+    desc: "Combined items & general billing",
+    prefix: "MX",
+    purchasePrefix: "PMIX",
+    color: "#6366F1",
+    badgeClass: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  },
+  {
+    id: "cement",
+    label: "Cement Sales",
+    shortLabel: "Cement",
+    desc: "Bags & Brand rates",
+    prefix: "SE",
+    purchasePrefix: "PCEM",
+    color: "#16A34A",
+    badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  {
+    id: "rod",
+    label: "Rod / Steel Sales",
+    shortLabel: "Rod / Steel",
+    desc: "Kg decimals & rates",
+    prefix: "RD",
+    purchasePrefix: "PROD",
+    color: "#D97706",
+    badgeClass: "bg-amber-100 text-amber-800 border-amber-200",
+  },
+  {
+    id: "daily",
+    label: "Electrical / Daily",
+    shortLabel: "Electrical / Daily",
+    desc: "Line items & electricals",
+    prefix: "S",
+    purchasePrefix: "PELEC",
+    color: "#2563EB",
+    badgeClass: "bg-blue-100 text-blue-800 border-blue-200",
+  },
+  {
+    id: "plumbing",
+    label: "Plumbing Bill",
+    shortLabel: "Plumbing",
+    desc: "Pipes, fittings & valves",
+    prefix: "PL",
+    purchasePrefix: "PPLM",
+    color: "#0891B2",
+    badgeClass: "bg-cyan-100 text-cyan-800 border-cyan-200",
+  },
+  {
+    id: "hardware",
+    label: "Hardware Accessories",
+    shortLabel: "Hardware",
+    desc: "Tools, fasteners & wire",
+    prefix: "HW",
+    purchasePrefix: "PHRD",
+    color: "#475569",
+    badgeClass: "bg-slate-100 text-slate-800 border-slate-200",
+  },
+  {
+    id: "paints",
+    label: "Putty & Paints",
+    shortLabel: "Putty & Paints",
+    desc: "Wall putty, primers & colors",
+    prefix: "PT",
+    purchasePrefix: "PPNT",
+    color: "#C026D3",
+    badgeClass: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200",
+  },
+  {
+    id: "machinery",
+    label: "Motor & Machinery",
+    shortLabel: "Motor & Machinery",
+    desc: "Motors, pumps & equipment",
+    prefix: "MM",
+    purchasePrefix: "PMCH",
+    color: "#EA580C",
+    badgeClass: "bg-orange-100 text-orange-800 border-orange-200",
+  },
+  {
+    id: "ceramic",
+    label: "CP & Ceramic Items",
+    shortLabel: "CP & Ceramic",
+    desc: "Sanitaryware, CP fittings & tiles",
+    prefix: "CP",
+    purchasePrefix: "PCRM",
+    color: "#0D9488",
+    badgeClass: "bg-teal-100 text-teal-800 border-teal-200",
+  },
+];
+
+export function getCategoryConfig(id: string): CategoryConfig {
+  const found = BILL_CATEGORIES.find((c) => c.id === id);
+  if (found) return found;
+  return {
+    id: id as BillCategory,
+    label: id.charAt(0).toUpperCase() + id.slice(1),
+    shortLabel: id.charAt(0).toUpperCase() + id.slice(1),
+    desc: "Line items & billing",
+    prefix: "B",
+    purchasePrefix: "PUR",
+    color: "#64748B",
+    badgeClass: "bg-slate-100 text-slate-800 border-slate-200",
+  };
+}
+
 /**
  * Generate collision-safe category-specific invoice numbers
- * e.g., CEMENT: SE-2026-001, ROD: RD-2026-001, DAILY: S-2026-001
+ * e.g., MIX: MX001, CEMENT: SE001, ROD: RD001, DAILY: S001, etc.
  */
-export function generateBillNumber(category: 'cement' | 'rod' | 'daily', existingCount: number): string {
-  const prefix = category === 'cement' ? 'SE' : category === 'rod' ? 'RD' : 'S';
+export function generateBillNumber(category: BillCategory, existingCount: number): string {
+  const conf = getCategoryConfig(category);
+  const prefix = conf.prefix;
   const num = (existingCount + 1).toString().padStart(3, '0');
   return `${prefix}${num}`;
 }

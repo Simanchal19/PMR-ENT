@@ -1,4 +1,5 @@
 import seedData from "../data/seedData.json";
+import { getCategoryConfig } from "./utils";
 import { 
   Customer, 
   Bill, 
@@ -346,12 +347,24 @@ export function getCollectionBucket(mode: string | null | undefined): Collection
 }
 
 export interface SalesBreakdown {
+  mix: number;
   cement: number;
   rod: number;
   daily: number;
+  plumbing: number;
+  hardware: number;
+  paints: number;
+  machinery: number;
+  ceramic: number;
+  mix_count: number;
   cement_count: number;
   rod_count: number;
   daily_count: number;
+  plumbing_count: number;
+  hardware_count: number;
+  paints_count: number;
+  machinery_count: number;
+  ceramic_count: number;
   gross_sales: number;
   approved_returns: number;
   net_sales: number;
@@ -368,19 +381,37 @@ export function calculateSalesBreakdown(dateFilter?: DateRange): SalesBreakdown 
     bills.filter(b => b.bill_category === cat).reduce((acc, b) => acc + (b.total_amount || 0), 0);
   const countCat = (cat: BillCategory) => bills.filter(b => b.bill_category === cat).length;
 
+  const mix = sumCat("mix");
   const cement = sumCat("cement");
   const rod = sumCat("rod");
   const daily = sumCat("daily");
+  const plumbing = sumCat("plumbing");
+  const hardware = sumCat("hardware");
+  const paints = sumCat("paints");
+  const machinery = sumCat("machinery");
+  const ceramic = sumCat("ceramic");
   const gross_sales = bills.reduce((acc, b) => acc + (b.total_amount || 0), 0);
   const approved_returns = returns.reduce((acc, r) => acc + (r.amount || 0), 0);
 
   return {
+    mix,
     cement,
     rod,
     daily,
+    plumbing,
+    hardware,
+    paints,
+    machinery,
+    ceramic,
+    mix_count: countCat("mix"),
     cement_count: countCat("cement"),
     rod_count: countCat("rod"),
     daily_count: countCat("daily"),
+    plumbing_count: countCat("plumbing"),
+    hardware_count: countCat("hardware"),
+    paints_count: countCat("paints"),
+    machinery_count: countCat("machinery"),
+    ceramic_count: countCat("ceramic"),
     gross_sales,
     approved_returns,
     net_sales: gross_sales - approved_returns,
@@ -2253,7 +2284,7 @@ export function createPurchaseBill(data: {
   const bills = getPurchaseBills();
   const nextSeq = bills.length + 1;
   const year = (data.purchase_date || "2026").slice(0, 4);
-  const catPrefix = data.bill_category === "cement" ? "PCEM" : data.bill_category === "rod" ? "PROD" : "PELEC";
+  const catPrefix = getCategoryConfig(data.bill_category).purchasePrefix || "PUR";
   const purchaseNumber = `${catPrefix}-${year}-${String(nextSeq).padStart(3, "0")}`;
 
   const billId = `pbill-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -2759,7 +2790,7 @@ export function calculatePurchaseMetrics(range?: DateRange): PurchaseSummaryMetr
   const rodKg = rodBills.reduce((s, b) => s + (b.rod_details?.qty_kg || 0), 0);
   const dailyPurchases = dailyBills.reduce((s, b) => s + (b.total_amount || 0), 0);
 
-  const grossPurchases = cementPurchases + rodPurchases + dailyPurchases;
+  const grossPurchases = billsInPeriod.reduce((s, b) => s + (b.total_amount || 0), 0);
   const purchaseReturns = returnsInPeriod.reduce((s, r) => s + (r.amount || 0), 0);
   const netPurchases = grossPurchases - purchaseReturns;
   const supplierPaymentsTotal = paymentsInPeriod.reduce((s, p) => s + (p.amount || 0), 0);

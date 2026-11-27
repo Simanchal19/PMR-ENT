@@ -19,7 +19,7 @@ import {
   PieChart as PieChartIcon,
   Truck
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import {
   calculateDashboardMetrics,
   calculateSalesBreakdown,
@@ -105,11 +105,13 @@ export default function DashboardPage() {
       setRecentBills(sortedFilteredBills.slice(0, 8));
 
       // Category Breakdown (same figures as the Total Sales card)
-      setCategoryData([
-        { name: "Daily / Electrical", value: s.daily, color: "#2563EB" },
-        { name: "Cement Sales", value: s.cement, color: "#16A34A" },
-        { name: "Rod & Steel", value: s.rod, color: "#D97706" },
-      ]);
+      setCategoryData(
+        BILL_CATEGORIES.map((cat) => ({
+          name: cat.shortLabel,
+          value: s[cat.id] || 0,
+          color: cat.color,
+        }))
+      );
 
       // Sales vs Collections Trend (strictly filtered by active reporting period)
       const filteredPayments = c.payments;
@@ -718,7 +720,7 @@ export default function DashboardPage() {
               Sales by Category
             </h3>
             <p className="text-xs text-slate-500 mb-2.5">
-              Daily / Electrical, Cement Sales & Rod / Steel
+              Across all 9 product &amp; service categories
             </p>
 
             {categoryData.some((c) => c.value > 0) ? (
@@ -815,19 +817,9 @@ export default function DashboardPage() {
             </div>
           ) : (
             recentBills.map((bill) => {
-              const catBadgeClass =
-                bill.bill_category === "cement"
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                  : bill.bill_category === "rod"
-                  ? "bg-amber-100 text-amber-800 border-amber-200"
-                  : "bg-blue-100 text-blue-800 border-blue-200";
-
-              const catLabel =
-                bill.bill_category === "cement"
-                  ? "Cement"
-                  : bill.bill_category === "rod"
-                  ? "Rod / Steel"
-                  : "Daily / Electrical";
+              const conf = getCategoryConfig(bill.bill_category);
+              const catBadgeClass = conf.badgeClass;
+              const catLabel = conf.shortLabel;
 
               const isPaid =
                 bill.payment_status === "legacy_paid_yes" || bill.payment_status === "paid";
@@ -931,17 +923,16 @@ export default function DashboardPage() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          bill.bill_category === "cement"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : bill.bill_category === "rod"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {bill.bill_category}
-                      </span>
+                      {(() => {
+                        const conf = getCategoryConfig(bill.bill_category);
+                        return (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${conf.badgeClass}`}
+                          >
+                            {conf.shortLabel}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-slate-500">
                       {bill.cement_details ? (
@@ -952,8 +943,14 @@ export default function DashboardPage() {
                         <span>
                           {bill.rod_details.qty_kg} Kg ({bill.rod_details.rod_size})
                         </span>
+                      ) : bill.items && bill.items.length > 0 ? (
+                        <span>
+                          {bill.items.length === 1
+                            ? bill.items[0].item_name
+                            : `${bill.items[0].item_name} +${bill.items.length - 1} more`}
+                        </span>
                       ) : (
-                        <span>Electrical Goods</span>
+                        <span>{getCategoryConfig(bill.bill_category).shortLabel} Goods</span>
                       )}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-slate-900">

@@ -495,9 +495,15 @@ export default function ReturnsPage() {
                     onChange={(e) => setItemType(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-semibold"
                   >
-                    <option value="ELECTRIC">ELECTRIC</option>
+                    <option value="MIX">MIX &amp; MISCELLANEOUS</option>
                     <option value="CEMENT">CEMENT</option>
                     <option value="ROD">ROD / STEEL</option>
+                    <option value="ELECTRIC">ELECTRICAL / DAILY</option>
+                    <option value="PLUMBING">PLUMBING</option>
+                    <option value="HARDWARE">HARDWARE ACCESSORIES</option>
+                    <option value="PAINTS">PUTTY &amp; PAINTS</option>
+                    <option value="MACHINERY">MOTOR &amp; MACHINERY</option>
+                    <option value="CERAMIC">CP &amp; CERAMIC</option>
                   </select>
                 </div>
               </div>

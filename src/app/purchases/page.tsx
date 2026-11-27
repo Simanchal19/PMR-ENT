@@ -37,7 +37,7 @@ import {
   BusinessProfile,
   UserRole,
 } from "@/lib/types";
-import { formatCurrency, formatDate, getTodayDateString } from "@/lib/utils";
+import { formatCurrency, formatDate, getTodayDateString, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import { exportElementToPdf } from "@/lib/pdfExport";
 import {
   Search,
@@ -457,12 +457,7 @@ export default function PurchasesPage() {
     for (const b of sBills) {
       let itemTitle = "Wholesale Stock Purchase";
       let itemSubtitle = "";
-      const catLabel =
-        b.bill_category === "cement"
-          ? "CEMENT"
-          : b.bill_category === "rod"
-          ? "STEEL / ROD"
-          : "ELECTRICAL";
+      const catLabel = getCategoryConfig(b.bill_category).shortLabel.toUpperCase();
 
       if (b.bill_category === "cement" && b.cement_details) {
         itemTitle = `${b.cement_details.cement_type} Cement Inward`;
@@ -728,9 +723,11 @@ export default function PurchasesPage() {
               className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50 font-semibold text-slate-700"
             >
               <option value="all">All Categories</option>
-              <option value="cement">Cement</option>
-              <option value="rod">Rod / Steel</option>
-              <option value="daily">Electrical / Hardware</option>
+              {BILL_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
             </select>
           )}
 
@@ -795,17 +792,14 @@ export default function PurchasesPage() {
                       </td>
                       <td className="py-3 px-4 font-bold text-slate-900">{bill.supplier_name}</td>
                       <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            bill.bill_category === "cement"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : bill.bill_category === "rod"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {bill.bill_category}
-                        </span>
+                        {(() => {
+                          const conf = getCategoryConfig(bill.bill_category);
+                          return (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${conf.badgeClass}`}>
+                              {conf.shortLabel}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4 text-slate-600">
                         {bill.bill_category === "cement" && bill.cement_details ? (
@@ -820,7 +814,7 @@ export default function PurchasesPage() {
                             {formatCurrency(bill.rod_details.rate_per_kg)}/kg
                           </span>
                         ) : (
-                          <span>{bill.items?.map((i) => i.item_name).join(", ") || "Electrical Stock"}</span>
+                          <span>{bill.items?.map((i) => i.item_name).join(", ") || `${getCategoryConfig(bill.bill_category).shortLabel} Stock`}</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">

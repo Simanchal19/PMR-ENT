@@ -24,7 +24,7 @@ import {
   PaymentModeOption,
   StockItemSummary,
 } from "@/lib/types";
-import { formatCurrency, getTodayDateString } from "@/lib/utils";
+import { formatCurrency, getTodayDateString, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import { getClientSession } from "@/lib/auth";
 import {
   ArrowLeft,
@@ -44,7 +44,24 @@ import {
   CreditCard,
   Receipt,
   Percent,
+  Layers,
+  Droplet,
+  Wrench,
+  Paintbrush,
+  Cog,
 } from "lucide-react";
+
+const categoryIconMap: Record<string, any> = {
+  mix: Layers,
+  cement: Package,
+  rod: Hammer,
+  daily: Zap,
+  plumbing: Droplet,
+  hardware: Wrench,
+  paints: Paintbrush,
+  machinery: Cog,
+  ceramic: Layers,
+};
 import {
   CementBrandManagerModal,
   RodSizeManagerModal,
@@ -377,14 +394,14 @@ export default function CreatePurchaseBillPage() {
       ];
     } else {
       billPayload.daily_details = {
-        item_type: "ELECTRIC",
+        item_type: category.toUpperCase(),
         amount: dailySubtotal,
       };
       billPayload.items = dailyItems.map((it, idx) => ({
         id: `pitem-${idx}`,
         bill_id: "",
-        item_name: it.name || "Electrical / Hardware Stock",
-        item_category: "DAILY",
+        item_name: it.name || `${getCategoryConfig(category).shortLabel} Stock`,
+        item_category: category.toUpperCase(),
         quantity: parseFloat(it.qty) || 1,
         unit: "NOS",
         unit_price: parseFloat(it.rate) || 0,
@@ -589,34 +606,15 @@ export default function CreatePurchaseBillPage() {
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 1. Select Purchase Stock Category
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  {
-                    id: "cement",
-                    label: "Cement Stock Inward",
-                    desc: "Bags & Brand purchase rates",
-                    icon: Package,
-                  },
-                  {
-                    id: "rod",
-                    label: "Rod / Steel Stock Inward",
-                    desc: "Kg weight & Rebar rates",
-                    icon: Hammer,
-                  },
-                  {
-                    id: "daily",
-                    label: "Electrical & Hardware",
-                    desc: "Wholesale items & supplies",
-                    icon: Zap,
-                  },
-                ].map((cat) => {
-                  const Icon = cat.icon;
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                {BILL_CATEGORIES.map((cat) => {
+                  const Icon = categoryIconMap[cat.id] || Package;
                   return (
                     <button
                       type="button"
                       key={cat.id}
                       onClick={() => handleCategorySelect(cat.id as BillCategory)}
-                      className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                      className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
                         category === cat.id
                           ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20"
                           : "border-slate-200 hover:bg-slate-50"
@@ -631,15 +629,15 @@ export default function CreatePurchaseBillPage() {
                       >
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div
-                          className={`font-bold text-xs ${
+                          className={`font-bold text-xs truncate ${
                             category === cat.id ? "text-blue-700" : "text-slate-800"
                           }`}
                         >
                           {cat.label}
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">{cat.desc}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">{cat.desc}</div>
                       </div>
                     </button>
                   );
@@ -1013,7 +1011,7 @@ export default function CreatePurchaseBillPage() {
               </div>
             )}
 
-            {category === "daily" && (
+            {category !== "cement" && category !== "rod" && (
               <div className="space-y-3">
                 <datalist id="purchase-hardware-catalog">
                   {hardwareItems.map((h) => (
@@ -1025,7 +1023,7 @@ export default function CreatePurchaseBillPage() {
 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                   <span className="flex items-center gap-1.5">
-                    <span>Electrical & Hardware Wholesale Items</span>
+                    <span>{getCategoryConfig(category).label} Wholesale Items</span>
                     <span className="text-[11px] font-normal text-slate-500 hidden sm:inline">
                       ({dailyItems.length} {dailyItems.length === 1 ? "item" : "items"})
                     </span>

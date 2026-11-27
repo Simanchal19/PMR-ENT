@@ -16,7 +16,7 @@ import {
 } from "@/lib/storage";
 import PaymentAllocationModal from "@/components/payments/PaymentAllocationModal";
 import { Customer, Bill, Payment, SalesReturn, UserRole, BusinessProfile } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, getCategoryConfig } from "@/lib/utils";
 import { exportElementToPdf } from "@/lib/pdfExport";
 import { 
   Search, Plus, UserPlus, FileSpreadsheet, Eye, X, Check, Phone, MapPin, 
@@ -236,7 +236,7 @@ export default function CustomersPage() {
         if (b.items && b.items.length > 0) {
           goodsDescription = b.items.map(it => `${it.item_name} (Qty: ${it.quantity})`).join(", ");
         } else {
-          goodsDescription = "Electrical & Hardware Daily Items Supply";
+          goodsDescription = `${getCategoryConfig(b.bill_category).shortLabel} Items Supply`;
         }
       }
 
@@ -1205,13 +1205,14 @@ export default function CustomersPage() {
                                 <td className="py-2.5 px-3 font-bold text-blue-700">Bill #{b.bill_number}</td>
                                 <td className="py-2.5 px-3 font-mono text-slate-500">{formatDate(b.bill_date)}</td>
                                 <td className="py-2.5 px-2">
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                    b.bill_category === "cement" ? "bg-emerald-100 text-emerald-800" :
-                                    b.bill_category === "rod" ? "bg-amber-100 text-amber-800" :
-                                    "bg-blue-100 text-blue-800"
-                                  }`}>
-                                    {b.bill_category}
-                                  </span>
+                                  {(() => {
+                                    const conf = getCategoryConfig(b.bill_category);
+                                    return (
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${conf.badgeClass}`}>
+                                        {conf.shortLabel}
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
                                 <td className="py-2.5 px-3 text-right font-medium text-slate-700">{formatCurrency(b.total_amount)}</td>
                                 <td className="py-2.5 px-3 text-right font-medium text-emerald-700">{formatCurrency(b.total_settled_amount)}</td>

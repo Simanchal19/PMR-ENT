@@ -10,7 +10,7 @@ import {
   CustomerPaymentStatus,
   OutstandingSummary,
 } from "@/lib/storage";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, BILL_CATEGORIES } from "@/lib/utils";
 import { BillCategory } from "@/lib/types";
 import PeriodSelector from "@/components/reports/PeriodSelector";
 import { PeriodPreset, readPeriodFromLocation, resolvePeriod, toYMD, ymdToDisplay } from "@/lib/period";
@@ -212,9 +212,11 @@ export default function OutstandingReportPage() {
         </div>
         <select value={category} onChange={(e) => setCategory(e.target.value as "all" | BillCategory)} className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold">
           <option value="all">All categories</option>
-          <option value="cement">Cement buyers</option>
-          <option value="rod">Rod / Steel buyers</option>
-          <option value="daily">Daily / Electrical buyers</option>
+          {BILL_CATEGORIES.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label} buyers
+            </option>
+          ))}
         </select>
         <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold">
           <option value="active">All with activity</option>

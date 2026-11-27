@@ -13,7 +13,7 @@ import {
   getStoredUserRole
 } from "@/lib/storage";
 import { Customer, BillCategory, Bill, CementBrand, RodSize, HardwareItem } from "@/lib/types";
-import { formatCurrency, getTodayDateString, generateBillNumber } from "@/lib/utils";
+import { formatCurrency, getTodayDateString, generateBillNumber, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import { getClientSession } from "@/lib/auth";
 import { 
   ArrowLeft, 
@@ -43,7 +43,7 @@ export default function CreateBillPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [category, setCategory] = useState<BillCategory>("cement");
+  const [category, setCategory] = useState<BillCategory>("mix");
   const [billDate, setBillDate] = useState(getTodayDateString());
   const [notes, setNotes] = useState("");
   const [successBill, setSuccessBill] = useState<Bill | null>(null);
@@ -519,15 +519,15 @@ export default function CreateBillPage() {
       items = validItems.map((it, idx) => ({
         id: `item-${Date.now()}-${idx+1}`,
         bill_id: "",
-        item_name: it.name || "Electrical Items",
-        item_category: "daily",
+        item_name: it.name || `${getCategoryConfig(category).shortLabel} Item`,
+        item_category: category,
         quantity: parseFloat(it.qty as any) || 1,
         unit: "UNIT",
         unit_price: parseFloat(it.rate as any) || 0,
         total_amount: it.amount
       }));
       daily_details = {
-        item_type: "ELECTRIC",
+        item_type: category.toUpperCase(),
         amount: dailyTotal
       };
     }
@@ -659,29 +659,35 @@ export default function CreateBillPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
           {/* Category Selector Tabs */}
           <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Select Product Category
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { id: "cement", label: "Cement Sales", desc: "Bags & Brand rates" },
-                { id: "rod", label: "Rod / Steel Sales", desc: "Kg decimals & rates" },
-                { id: "daily", label: "Electrical / Daily", desc: "Line items & hardware" },
-              ].map((c) => (
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Select Product Category
+              </label>
+              <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                9 Active Categories · Mix &amp; Misc at top
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              {BILL_CATEGORIES.map((c) => (
                 <button
                   type="button"
                   key={c.id}
-                  onClick={() => setCategory(c.id as BillCategory)}
-                  className={`p-3 rounded-xl border text-left transition-all ${
+                  onClick={() => setCategory(c.id)}
+                  className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all ${
                     category === c.id
-                      ? "bg-white border-blue-600 ring-2 ring-blue-500/20 shadow-sm"
-                      : "bg-white/50 border-slate-200 hover:bg-white"
+                      ? "bg-white border-blue-600 ring-2 ring-blue-500/20 shadow-xs"
+                      : "bg-white/60 border-slate-200 hover:bg-white hover:border-slate-300"
                   }`}
                 >
-                  <div className={`font-bold text-xs ${category === c.id ? "text-blue-600" : "text-slate-800"}`}>
-                    {c.label}
+                  <div className="flex items-center justify-between gap-1">
+                    <span className={`font-bold text-xs ${category === c.id ? "text-blue-600" : "text-slate-800"}`}>
+                      {c.label}
+                    </span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0 font-bold">
+                      {c.prefix}
+                    </span>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">{c.desc}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">{c.desc}</div>
                 </button>
               ))}
             </div>
@@ -1160,7 +1166,7 @@ export default function CreateBillPage() {
               </div>
             )}
 
-            {category === "daily" && (
+            {category !== "cement" && category !== "rod" && (
               <div className="space-y-3">
                 <datalist id="sales-hardware-catalog">
                   {hardwareItems.map((h) => (
@@ -1172,7 +1178,7 @@ export default function CreateBillPage() {
 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                   <span className="flex items-center gap-1.5">
-                    <span>Electrical & Hardware Line Items</span>
+                    <span>{getCategoryConfig(category).label} Line Items</span>
                     <span className="text-[11px] font-normal text-slate-500 hidden sm:inline">
                       ({dailyItems.length} {dailyItems.length === 1 ? "item" : "items"})
                     </span>

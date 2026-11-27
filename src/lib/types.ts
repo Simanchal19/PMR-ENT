@@ -27,7 +27,16 @@ export interface AuthSession {
   expiresAt: number;
 }
 
-export type BillCategory = 'cement' | 'rod' | 'daily';
+export type BillCategory = 
+  | 'mix'
+  | 'cement'
+  | 'rod'
+  | 'daily'
+  | 'plumbing'
+  | 'hardware'
+  | 'paints'
+  | 'machinery'
+  | 'ceramic';
 export type BillStatus = 'draft' | 'posted' | 'voided';
 export type BillPaymentStatus = 
   | 'unpaid' 

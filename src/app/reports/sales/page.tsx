@@ -5,24 +5,31 @@ import Link from "next/link";
 import { ArrowLeft, FileSpreadsheet, Receipt, RotateCcw, TrendingUp } from "lucide-react";
 import * as XLSX from "xlsx";
 import { calculateSalesBreakdown, getBills, SalesBreakdown } from "@/lib/storage";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, BILL_CATEGORIES } from "@/lib/utils";
 import { BillCategory } from "@/lib/types";
 import PeriodSelector from "@/components/reports/PeriodSelector";
 import { PeriodPreset, readPeriodFromLocation, resolvePeriod, toYMD } from "@/lib/period";
 
-const CATEGORY_META: { key: BillCategory; label: string; color: string; badge: string }[] = [
-  { key: "cement", label: "Cement Sales", color: "#16A34A", badge: "bg-emerald-100 text-emerald-800" },
-  { key: "rod", label: "Rod / Steel Sales", color: "#D97706", badge: "bg-amber-100 text-amber-800" },
-  { key: "daily", label: "Daily / Electrical Sales", color: "#2563EB", badge: "bg-blue-100 text-blue-800" },
-];
+const CATEGORY_META: { key: BillCategory; label: string; color: string; badge: string }[] = BILL_CATEGORIES.map((c) => ({
+  key: c.id,
+  label: c.label,
+  color: c.color,
+  badge: c.badgeClass,
+}));
 
 /** Assign an approved return to a category via its original bill, else via its item type text */
 function returnCategory(itemType: string, originalBillCategory?: BillCategory): BillCategory | "unassigned" {
   if (originalBillCategory) return originalBillCategory;
   const t = (itemType || "").toLowerCase();
+  if (t.includes("mix")) return "mix";
   if (t.includes("cement")) return "cement";
   if (t.includes("rod") || t.includes("steel") || t.includes("tmt")) return "rod";
   if (t.includes("daily") || t.includes("elect")) return "daily";
+  if (t.includes("plumb") || t.includes("pipe")) return "plumbing";
+  if (t.includes("hard") || t.includes("tool")) return "hardware";
+  if (t.includes("paint") || t.includes("putty")) return "paints";
+  if (t.includes("machin") || t.includes("motor") || t.includes("pump")) return "machinery";
+  if (t.includes("ceram") || t.includes("cp") || t.includes("sanitar") || t.includes("tile")) return "ceramic";
   return "unassigned";
 }
 
@@ -53,12 +60,23 @@ export default function SalesReportPage() {
   }, [period, ready]);
 
   const returnsByCategory = useMemo(() => {
-    const map: Record<string, number> = { cement: 0, rod: 0, daily: 0, unassigned: 0 };
+    const map: Record<string, number> = {
+      mix: 0,
+      cement: 0,
+      rod: 0,
+      daily: 0,
+      plumbing: 0,
+      hardware: 0,
+      paints: 0,
+      machinery: 0,
+      ceramic: 0,
+      unassigned: 0,
+    };
     if (!data) return map;
     const billCat = new Map(getBills().map((b) => [b.id, b.bill_category] as const));
     for (const r of data.returns) {
       const cat = returnCategory(r.item_type, r.original_bill_id ? billCat.get(r.original_bill_id) : undefined);
-      map[cat] += r.amount || 0;
+      map[cat] = (map[cat] || 0) + (r.amount || 0);
     }
     return map;
   }, [data]);
@@ -141,7 +159,7 @@ export default function SalesReportPage() {
       ) : (
         <>
           {/* Category cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {CATEGORY_META.map((c) => (
               <div key={c.key} className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs" style={{ borderTop: `4px solid ${c.color}` }}>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{c.label}</div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getBills, getBusinessProfile } from "@/lib/storage";
 import { Bill, BillCategory, BusinessProfile } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, BILL_CATEGORIES, getCategoryConfig } from "@/lib/utils";
 import { Search, PlusCircle, Printer, Eye, Filter, X, Receipt } from "lucide-react";
 
 export default function SalesPage() {
@@ -41,7 +41,7 @@ export default function SalesPage() {
             Sales & Billing Register
           </h1>
           <p className="text-sm text-slate-500">
-            {bills.length} total bills (Cement, Electrical Daily, Rod & Steel)
+            {bills.length} total bills across all 9 categories
           </p>
         </div>
 
@@ -55,18 +55,26 @@ export default function SalesPage() {
       </div>
 
       {/* Tabs & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
         {/* Category Tabs */}
-        <div className="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold w-full sm:w-auto">
-          {(["all", "cement", "daily", "rod"] as const).map((cat) => (
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 max-w-full bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+          <button
+            onClick={() => setCategoryFilter("all")}
+            className={`px-3 py-1.5 rounded-md whitespace-nowrap transition-all ${
+              categoryFilter === "all" ? "bg-white text-blue-600 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            All Bills
+          </button>
+          {BILL_CATEGORIES.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setCategoryFilter(cat)}
-              className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-md capitalize transition-all ${
-                categoryFilter === cat ? "bg-white text-blue-600 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+              key={cat.id}
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`px-2.5 py-1.5 rounded-md whitespace-nowrap transition-all ${
+                categoryFilter === cat.id ? "bg-white text-blue-600 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              {cat === "all" ? "All Bills" : cat === "daily" ? "Electrical Daily" : cat}
+              {cat.shortLabel}
             </button>
           ))}
         </div>
@@ -120,15 +128,14 @@ export default function SalesPage() {
                       {bill.customer_name}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        bill.bill_category === "cement" 
-                          ? "bg-emerald-100 text-emerald-800" 
-                          : bill.bill_category === "rod"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}>
-                        {bill.bill_category}
-                      </span>
+                      {(() => {
+                        const conf = getCategoryConfig(bill.bill_category);
+                        return (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${conf.badgeClass}`}>
+                            {conf.shortLabel}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-slate-600">
                       {bill.bill_category === "cement" ? (
@@ -157,8 +164,14 @@ export default function SalesPage() {
                         ) : (
                           <span>Rod / Steel Supply</span>
                         )
+                      ) : bill.items && bill.items.length > 0 ? (
+                        <span>
+                          {bill.items.length === 1
+                            ? `${bill.items[0].quantity} ${bill.items[0].unit} • ${bill.items[0].item_name}`
+                            : bill.items.slice(0, 2).map(it => it.item_name).join(", ") + (bill.items.length > 2 ? ` +${bill.items.length - 2} more` : "")}
+                        </span>
                       ) : (
-                        <span>{bill.items[0]?.item_name || "Electrical Goods"}</span>
+                        <span>{getCategoryConfig(bill.bill_category).shortLabel} Items</span>
                       )}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-slate-900">

@@ -34,7 +34,7 @@ import {
   CustomerOutstandingRow,
 } from "@/lib/storage";
 import { Supplier, BillCategory } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, BILL_CATEGORIES } from "@/lib/utils";
 import {
   PeriodPreset,
   readPeriodFromLocation,
@@ -954,9 +954,11 @@ export default function ReportsPage() {
                 className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold"
               >
                 <option value="all">All Categories</option>
-                <option value="cement">Cement Suppliers</option>
-                <option value="rod">Rod / Steel Suppliers</option>
-                <option value="daily">Electrical & Hardware</option>
+                {BILL_CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label} Suppliers
+                  </option>
+                ))}
               </select>
 
               <select
