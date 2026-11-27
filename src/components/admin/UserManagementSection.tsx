@@ -20,6 +20,7 @@ import {
   EyeOff,
   UserCheck,
   UserX,
+  Search,
 } from "lucide-react";
 import { UserRole, EnterpriseUserRecord, AuthUser } from "@/lib/types";
 import {
@@ -38,6 +39,8 @@ interface Props {
 
 export default function UserManagementSection({ role, currentUser }: Props) {
   const [users, setUsers] = useState<EnterpriseUserRecord[]>([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"ALL" | UserRole>("ALL");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -220,6 +223,17 @@ export default function UserManagementSection({ role, currentUser }: Props) {
   const managerCount = users.filter((u) => u.role === "manager").length;
   const ownerCount = users.filter((u) => u.role === "owner").length;
 
+  const filteredUsers = users.filter((u) => {
+    if (roleFilter !== "ALL" && u.role !== roleFilter) return false;
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      u.fullName.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
       {/* Header */}
@@ -322,6 +336,33 @@ export default function UserManagementSection({ role, currentUser }: Props) {
         </div>
       </div>
 
+      {/* Quick Filter Toolbar */}
+      <div className="px-4 py-3 bg-white border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Search staff name, @username, or email..."
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as "ALL" | UserRole)}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+          >
+            <option value="ALL">All Roles ({users.length})</option>
+            <option value="admin">Admin ({adminCount})</option>
+            <option value="owner">Owner ({ownerCount})</option>
+            <option value="manager">Manager ({managerCount})</option>
+            <option value="operator">Operator</option>
+          </select>
+        </div>
+      </div>
+
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
@@ -336,7 +377,14 @@ export default function UserManagementSection({ role, currentUser }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-800">
-            {users.map((u) => {
+            {filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                  No staff accounts match your search filter.
+                </td>
+              </tr>
+            ) : (
+              filteredUsers.map((u) => {
               const isCurrentSession = currentUser?.id === u.id || currentUser?.username === u.username;
               return (
                 <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
@@ -458,14 +506,15 @@ export default function UserManagementSection({ role, currentUser }: Props) {
                   </td>
                 </tr>
               );
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Mobile Card View */}
       <div className="md:hidden p-3 space-y-3 bg-slate-50/50">
-        {users.map((u) => {
+        {filteredUsers.map((u) => {
           const isCurrentSession = currentUser?.id === u.id || currentUser?.username === u.username;
           return (
             <div
