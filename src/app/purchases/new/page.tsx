@@ -1156,16 +1156,22 @@ export default function CreatePurchaseBillPage() {
                   ))}
                 </div>
 
-                {/* Quick Add Another Line Item Button */}
-                <div className="flex items-center justify-between pt-1">
+                {/* Quick Add Another Line Item Button + Total Amount */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                   <button
                     type="button"
                     onClick={handleAddDailyItem}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors self-start"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>+ Add Another Product Item</span>
                   </button>
+
+                  <div className="text-right text-xs text-blue-950 font-semibold bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 flex items-center justify-between sm:justify-end gap-3">
+                    <span>Items: <strong className="font-black text-blue-900">{dailyItems.length}</strong></span>
+                    <span className="text-blue-300">|</span>
+                    <span>Total Amount: <strong className="font-black text-blue-900">{formatCurrency(dailySubtotal)}</strong></span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-2 sm:gap-3 pt-3 border-t border-slate-100">
