@@ -885,9 +885,9 @@ export default function CreateBillPage() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col xl:flex-row items-start gap-5">
-          {/* LEFT COLUMN (Main Billing Form — expands when sidebar collapses) */}
-          <div className="flex-1 min-w-0 w-full space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Main Billing Form (Full Width) */}
+          <div className="w-full space-y-4">
             {/* Top Bar Card: Customer / Party Name + Quick Pills + Bill Date */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:gap-4 items-start">
@@ -1830,10 +1830,10 @@ export default function CreateBillPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN (300px capped sticky panel on xl+): Bill Summary Card */}
-          <aside className="w-full xl:w-[300px] xl:max-w-[300px] xl:shrink-0 xl:sticky xl:top-20">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          {/* Bottom Bill Summary Card (Full Width below Item Entry) */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2">
                 <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                   Bill Summary
                 </h2>
@@ -1841,17 +1841,17 @@ export default function CreateBillPage() {
                   {getCategoryConfig(category).shortLabel}
                 </span>
               </div>
-
-              {/* Items Subtotal */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 font-medium">Items Subtotal</span>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-600 font-medium">Items Subtotal:</span>
                 <span className="font-bold text-slate-900 font-mono text-sm">
                   {formatCurrency(goodsSubtotal)}
                 </span>
               </div>
+            </div>
 
-              {/* Labour & Transport Charges */}
-              <div className="space-y-3 pt-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+              {/* Labour & Transport Charges (Left Half on lg+) */}
+              <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
                     <span>Labour Charge (₹)</span>
@@ -1868,7 +1868,7 @@ export default function CreateBillPage() {
                       placeholder="0.00"
                       value={labourCost}
                       onChange={(e) => setLabourCost(e.target.value)}
-                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full h-9 pl-7 pr-3 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1889,59 +1889,60 @@ export default function CreateBillPage() {
                       placeholder="0.00"
                       value={transportCost}
                       onChange={(e) => setTransportCost(e.target.value)}
-                      className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full h-9 pl-7 pr-3 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Grand Total */}
-              <div className="pt-3 border-t border-slate-200 space-y-1">
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Total Invoice Value
-                </div>
-                <div className="text-2xl font-black text-blue-700 font-mono tracking-tight">
-                  {formatCurrency(currentTotal)}
-                </div>
-                {(labourVal > 0 || transportVal > 0) && (
-                  <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-2">
-                    {labourVal > 0 && <span>+Labour: {formatCurrency(labourVal)}</span>}
-                    {transportVal > 0 && <span>+Transport: {formatCurrency(transportVal)}</span>}
+              {/* Total Invoice Value & Save Actions (Right Half on lg+) */}
+              <div className="lg:col-span-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-slate-50/80 border border-slate-200 p-3.5 sm:p-4">
+                <div className="space-y-0.5 min-w-0">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Total Invoice Value
                   </div>
-                )}
-              </div>
-
-              {/* Validation Alert */}
-              {!selectedCustomerId && (
-                <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
-                  ⚠️ Select customer to enable posting
+                  <div className="text-2xl font-black text-blue-700 font-mono tracking-tight">
+                    {formatCurrency(currentTotal)}
+                  </div>
+                  {(labourVal > 0 || transportVal > 0) && (
+                    <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-2">
+                      {labourVal > 0 && <span>+Labour: {formatCurrency(labourVal)}</span>}
+                      {transportVal > 0 && <span>+Transport: {formatCurrency(transportVal)}</span>}
+                    </div>
+                  )}
                 </div>
-              )}
-              {selectedCustomerId && goodsSubtotal <= 0 && (
-                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-medium">
-                  Enter quantity &amp; unit rate to calculate total
-                </div>
-              )}
 
-              {/* Save / Cancel Actions */}
-              <div className="space-y-2 pt-1">
-                <button
-                  type="submit"
-                  disabled={!selectedCustomerId || currentTotal <= 0 || goodsSubtotal <= 0}
-                  className="w-full flex items-center justify-center gap-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{editingBill ? "Update & Save Invoice" : "Post Bill & Save"}</span>
-                </button>
-                <Link
-                  href="/sales"
-                  className="w-full block text-center px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </Link>
+                <div className="flex flex-col sm:items-end gap-2 shrink-0">
+                  {!selectedCustomerId && (
+                    <div className="px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
+                      ⚠️ Select customer to enable posting
+                    </div>
+                  )}
+                  {selectedCustomerId && goodsSubtotal <= 0 && (
+                    <div className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600 font-medium">
+                      Enter quantity &amp; unit rate to calculate total
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <Link
+                      href="/sales"
+                      className="flex-1 sm:flex-none text-center px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                    >
+                      Cancel
+                    </Link>
+                    <button
+                      type="submit"
+                      disabled={!selectedCustomerId || currentTotal <= 0 || goodsSubtotal <= 0}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{editingBill ? "Update & Save Invoice" : "Post Bill & Save"}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </aside>
+          </div>
 
           {/* Mobile Fixed Bottom Action Bar (< 768px) */}
           <div className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xs border-t border-slate-200 px-4 py-3 shadow-lg flex items-center justify-between gap-3">
