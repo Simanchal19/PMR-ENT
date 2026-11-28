@@ -276,21 +276,30 @@ export default function SalesPage() {
       </div>
 
       {/* Invoice Preview Modal */}
-      {selectedBill && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+      {selectedBill && (() => {
+        const previewGoodsItems = selectedBill.items.filter(
+          (it) =>
+            it.unit !== "SERVICE" &&
+            !(it.item_name || "").toLowerCase().includes("labour") &&
+            !(it.item_name || "").toLowerCase().includes("transport")
+        );
+        const displayItems = previewGoodsItems.length > 0 ? previewGoodsItems : selectedBill.items;
+        return (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-slate-200 shrink-0">
               <div className="flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-blue-600" />
                 <h3 className="font-bold text-slate-900 text-base">Tax Invoice / Bill Preview</h3>
               </div>
-              <button onClick={() => setSelectedBill(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSelectedBill(null)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Printable Invoice Card */}
-            <div className="p-4 my-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-4 text-xs font-mono">
+            {/* Printable Invoice Card (Scrollable body on shorter screens) */}
+            <div className="px-5 sm:px-6 py-4 overflow-y-auto flex-1 min-h-0">
+            <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-4 text-xs font-mono">
               <div className="text-center border-b border-dashed border-slate-300 pb-3">
                 <div className="font-bold text-base text-slate-900">{businessProfile.name}</div>
                 <div className="text-slate-500 text-[11px]">{businessProfile.address} • GSTIN: {businessProfile.gstin}</div>
@@ -322,7 +331,7 @@ export default function SalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {selectedBill.items.map((item, i) => (
+                  {displayItems.map((item, i) => (
                     <tr key={i}>
                       <td className="py-1.5 font-sans">{item.item_name}</td>
                       <td className="py-1.5 font-sans text-slate-600">{item.brand || (item.item_category === "cement" && item.unit !== "SERVICE" ? item.item_name.replace(/\s*Cement$/i, "") : "-")}</td>
@@ -383,8 +392,9 @@ export default function SalesPage() {
                 <span className="text-blue-700">{formatCurrency(selectedBill.total_amount)}</span>
               </div>
             </div>
+            </div>
 
-            <div className="flex flex-wrap justify-end gap-2">
+            <div className="px-5 sm:px-6 pb-4 pt-3 border-t border-slate-200 bg-white flex flex-wrap justify-end gap-2 shrink-0">
               <button
                 onClick={() => setSelectedBill(null)}
                 className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold text-xs"
@@ -420,7 +430,8 @@ export default function SalesPage() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Delete Invoice Confirmation Modal */}
       {billToDelete && (

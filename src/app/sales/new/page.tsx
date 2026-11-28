@@ -935,22 +935,33 @@ export default function CreateBillPage() {
           <p className="text-xs text-slate-600 max-w-md mx-auto">
             Total amount of {formatCurrency(successBill.total_amount)} has been {isUpdateSuccess ? "reconciled for" : "billed to"} {successBill.customer_name} and updated in their customer ledger.
           </p>
-          <div className="max-w-md mx-auto p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-left space-y-2">
-            <div className="font-bold text-slate-700 text-[11px] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
-              <span>Billed Items ({successBill.items.length})</span>
-              <span>Amount</span>
-            </div>
-            {successBill.items.map((it, idx) => (
-              <div key={idx} className="flex justify-between items-center text-slate-700">
-                <span className="font-medium">
-                  {it.item_name}
-                  {it.brand ? <span className="text-blue-700 font-semibold"> ({it.brand})</span> : null}{" "}
-                  <span className="text-slate-400 font-normal">({it.quantity} {it.unit} @ {formatCurrency(it.unit_price)})</span>
-                </span>
-                <span className="font-bold text-slate-900">{formatCurrency(it.total_amount)}</span>
+          {(() => {
+            const goodsList = successBill.items.filter(
+              (it) =>
+                it.unit !== "SERVICE" &&
+                !(it.item_name || "").toLowerCase().includes("labour") &&
+                !(it.item_name || "").toLowerCase().includes("transport")
+            );
+            const shownItems = goodsList.length > 0 ? goodsList : successBill.items;
+            return (
+              <div className="max-w-md mx-auto p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-left space-y-2">
+                <div className="font-bold text-slate-700 text-[11px] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <span>Billed Items ({shownItems.length})</span>
+                  <span>Amount</span>
+                </div>
+                {shownItems.map((it, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-slate-700">
+                    <span className="font-medium">
+                      {it.item_name}
+                      {it.brand ? <span className="text-blue-700 font-semibold"> ({it.brand})</span> : null}{" "}
+                      <span className="text-slate-400 font-normal">({it.quantity} {it.unit} @ {formatCurrency(it.unit_price)})</span>
+                    </span>
+                    <span className="font-bold text-slate-900">{formatCurrency(it.total_amount)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
 
           {(successBill.labour_amount || successBill.transport_amount) ? (
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 font-medium pt-1">
