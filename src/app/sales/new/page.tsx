@@ -670,7 +670,11 @@ export default function CreateBillPage() {
     }
 
     const existingBills = getBills().filter(b => b.bill_category === category);
-    const billNumber = generateBillNumber(category, existingBills.length);
+    const billNumber = generateBillNumber(
+      category,
+      existingBills.length,
+      existingBills.map((b) => b.bill_number)
+    );
 
     let items: BillItem[] = [];
     let cement_details = undefined;

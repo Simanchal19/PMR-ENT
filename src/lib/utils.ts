@@ -97,7 +97,7 @@ export const BILL_CATEGORIES: CategoryConfig[] = [
     label: "Cement Sales",
     shortLabel: "Cement",
     desc: "Bags & Brand rates",
-    prefix: "SE",
+    prefix: "CE",
     purchasePrefix: "PCEM",
     color: "#16A34A",
     badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -117,7 +117,7 @@ export const BILL_CATEGORIES: CategoryConfig[] = [
     label: "Electrical / Daily",
     shortLabel: "Electrical / Daily",
     desc: "Line items & electricals",
-    prefix: "S",
+    prefix: "EL",
     purchasePrefix: "PELEC",
     color: "#2563EB",
     badgeClass: "bg-blue-100 text-blue-800 border-blue-200",
@@ -191,11 +191,34 @@ export function getCategoryConfig(id: string): CategoryConfig {
 
 /**
  * Generate collision-safe category-specific invoice numbers
- * e.g., MIX: MX001, CEMENT: SE001, ROD: RD001, DAILY: S001, etc.
+ * e.g., MIX: MX001, CEMENT: CE001, ROD: RD001, ELECTRICAL: EL001, PLUMBING: PL001, etc.
  */
-export function generateBillNumber(category: BillCategory, existingCount: number): string {
+export function generateBillNumber(
+  category: BillCategory,
+  existingCount: number,
+  existingBillNumbers?: string[]
+): string {
   const conf = getCategoryConfig(category);
   const prefix = conf.prefix;
-  const num = (existingCount + 1).toString().padStart(3, '0');
-  return `${prefix}${num}`;
+  const numbers = existingBillNumbers || [];
+  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`^${escaped}(\\d+)$`, "i");
+  const existingSet = new Set(numbers.map((n) => n.toUpperCase()));
+
+  let maxSeq = 0;
+  for (const numStr of numbers) {
+    const match = numStr.match(pattern);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (!isNaN(n) && n > maxSeq) maxSeq = n;
+    }
+  }
+
+  let nextSeq = existingBillNumbers !== undefined ? maxSeq + 1 : existingCount + 1;
+  let candidate = `${prefix}${String(nextSeq).padStart(3, "0")}`;
+  while (existingSet.has(candidate.toUpperCase())) {
+    nextSeq += 1;
+    candidate = `${prefix}${String(nextSeq).padStart(3, "0")}`;
+  }
+  return candidate;
 }
