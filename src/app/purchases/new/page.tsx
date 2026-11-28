@@ -186,8 +186,8 @@ export default function CreatePurchaseBillPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const catParam = params.get("category");
-      if (catParam === "cement" || catParam === "rod" || catParam === "daily") {
-        setCategory(catParam);
+      if (catParam && BILL_CATEGORIES.some((c) => c.id === catParam)) {
+        setCategory(catParam as BillCategory);
         if (catParam === "cement") setGstRate(28);
         else setGstRate(18);
       }

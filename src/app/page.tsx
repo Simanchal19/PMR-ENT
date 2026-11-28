@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
-  ArrowUpRight, 
+  ArrowUpRight,
+  ArrowUp,
+  ArrowDown,
   CreditCard, 
   Wallet, 
   AlertCircle, 
@@ -53,7 +55,7 @@ const DASHBOARD_CATEGORIES: {
   {
     id: "mix",
     name: "Mix & Miscellaneous",
-    desc: "Mixed & general items",
+    desc: "All General & Mixed items",
     prefix: "MX",
     icon: Layers,
     color: "text-indigo-600",
@@ -63,8 +65,8 @@ const DASHBOARD_CATEGORIES: {
   {
     id: "cement",
     name: "Cement",
-    desc: "Bags & Brand rates",
-    prefix: "SE",
+    desc: "All types of Cement",
+    prefix: "CM",
     icon: Package,
     color: "text-emerald-600",
     bg: "bg-emerald-50",
@@ -72,8 +74,8 @@ const DASHBOARD_CATEGORIES: {
   },
   {
     id: "rod",
-    name: "Road",
-    desc: "TMT Rebar & Kg rates",
+    name: "Rod / Steel",
+    desc: "TMT Rebar & KG items",
     prefix: "RD",
     icon: Hammer,
     color: "text-amber-600",
@@ -83,8 +85,8 @@ const DASHBOARD_CATEGORIES: {
   {
     id: "daily",
     name: "Electrical",
-    desc: "Wires, switches & parts",
-    prefix: "S",
+    desc: "Wires, Switches & Parts",
+    prefix: "EL",
     icon: Zap,
     color: "text-blue-600",
     bg: "bg-blue-50",
@@ -92,8 +94,8 @@ const DASHBOARD_CATEGORIES: {
   },
   {
     id: "plumbing",
-    name: "Plumbing Bill",
-    desc: "Pipes, fittings & valves",
+    name: "Plumbing",
+    desc: "Pipes, Fittings & Valves",
     prefix: "PL",
     icon: Droplet,
     color: "text-cyan-600",
@@ -102,8 +104,8 @@ const DASHBOARD_CATEGORIES: {
   },
   {
     id: "hardware",
-    name: "Hardware Accessories",
-    desc: "Fasteners, tools & wire",
+    name: "Hardware",
+    desc: "Fasteners, Tools & Hardware",
     prefix: "HW",
     icon: Wrench,
     color: "text-slate-600",
@@ -113,7 +115,7 @@ const DASHBOARD_CATEGORIES: {
   {
     id: "paints",
     name: "Putty & Paints",
-    desc: "Wall putty & coatings",
+    desc: "Wall Putty, Primers & Colors",
     prefix: "PT",
     icon: Paintbrush,
     color: "text-fuchsia-600",
@@ -123,7 +125,7 @@ const DASHBOARD_CATEGORIES: {
   {
     id: "machinery",
     name: "Motor & Machinery",
-    desc: "Motors, pumps & gear",
+    desc: "Motors, Pumps & Gear",
     prefix: "MM",
     icon: Cog,
     color: "text-orange-600",
@@ -133,7 +135,7 @@ const DASHBOARD_CATEGORIES: {
   {
     id: "ceramic",
     name: "CP & Ceramic Items",
-    desc: "Sanitary & CP fittings",
+    desc: "Sanitaryware & CP Fittings",
     prefix: "CP",
     icon: Sparkles,
     color: "text-teal-600",
@@ -370,45 +372,68 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3.5">
           {DASHBOARD_CATEGORIES.map((c) => {
             const Icon = c.icon;
-            const amount = sales[c.id] || 0;
-            const count = (sales[`${c.id}_count` as keyof SalesBreakdown] as number) || 0;
+            const salesAmount = sales[c.id] || 0;
+            const purchaseAmount = purchaseMetrics?.category_totals?.[c.id] || 0;
             return (
-              <Link
+              <div
                 key={c.id}
-                href={`/sales/new?category=${c.id}`}
-                title={`Open ${c.name} Billing`}
-                className="group relative bg-white rounded-xl p-2.5 sm:p-4 border border-slate-200 shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between h-full text-left"
+                className="group relative bg-white rounded-xl p-3.5 sm:p-4 border border-slate-200 shadow-2xs hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between h-full text-left"
                 style={{ borderTop: `3px solid ${c.colorHex}` }}
               >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2.5">
-                    <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg ${c.bg} ${c.color} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}>
-                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Link
+                  href={`/sales/new?category=${c.id}`}
+                  title={`Open ${c.name} Billing`}
+                  className="block"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${c.bg} ${c.color} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}>
+                      <Icon className="w-4 h-4" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded bg-slate-100 text-slate-500">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80">
                       {c.prefix}
                     </span>
                   </div>
-                  <div className="font-bold text-[11px] sm:text-sm text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 sm:line-clamp-none leading-tight">
+                  <div className="font-bold text-sm text-[#14243A] group-hover:text-blue-600 transition-colors leading-tight">
                     {c.name}
                   </div>
-                  <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 hidden md:block truncate">
+                  <div className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
                     {c.desc}
                   </div>
-                </div>
+                </Link>
 
-                <div className="mt-2 sm:mt-3 pt-1.5 sm:pt-2 border-t border-slate-100 flex items-center justify-between gap-1 text-[10px] sm:text-xs">
-                  <span className="text-slate-500 font-medium truncate">
-                    {count > 0 ? `${count} bill${count > 1 ? "s" : ""}` : "Create"}
-                  </span>
-                  <span className={`font-bold whitespace-nowrap ${amount > 0 ? "text-slate-800" : "text-blue-600"}`}>
-                    {amount > 0 ? formatCurrency(amount) : "+ Bill"}
-                  </span>
+                <div className="mt-3 pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-2">
+                  <Link
+                    href={`/purchases?category=${c.id}`}
+                    title={`View ${c.name} Purchases Ledger`}
+                    className="group/p rounded-lg px-1.5 py-1 -mx-1 hover:bg-blue-50/80 transition-colors min-w-0"
+                  >
+                    <div className="flex items-center gap-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-700 group-hover/p:underline">
+                      <span className="truncate">Purchases</span>
+                      <ArrowUp className="w-3 h-3 shrink-0" />
+                    </div>
+                    <div className="text-xs sm:text-sm font-black text-slate-900 font-mono tabular-nums truncate mt-0.5">
+                      {formatCurrency(purchaseAmount)}
+                    </div>
+                  </Link>
+
+                  <Link
+                    href={`/sales?category=${c.id}`}
+                    title={`View ${c.name} Sales Register`}
+                    className="group/s rounded-lg px-1.5 py-1 -mx-1 hover:bg-emerald-50/80 transition-colors min-w-0 text-right"
+                  >
+                    <div className="flex items-center justify-end gap-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 group-hover/s:underline">
+                      <span className="truncate">Sales</span>
+                      <ArrowDown className="w-3 h-3 shrink-0" />
+                    </div>
+                    <div className="text-xs sm:text-sm font-black text-slate-900 font-mono tabular-nums truncate mt-0.5">
+                      {formatCurrency(salesAmount)}
+                    </div>
+                  </Link>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

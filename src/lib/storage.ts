@@ -2920,6 +2920,7 @@ export interface PurchaseSummaryMetrics {
   rod_purchases: number;
   rod_kg_purchased: number;
   daily_purchases: number;
+  category_totals: Record<BillCategory, number>;
   supplier_payments_total: number;
   total_supplier_payable: number;
   unpaid_purchase_bills_count: number;
@@ -2942,6 +2943,24 @@ export function calculatePurchaseMetrics(range?: DateRange): PurchaseSummaryMetr
   const paymentsInPeriod = range
     ? allPayments.filter(p => isDateInRange(p.payment_date, range))
     : allPayments;
+
+  const categoryTotals: Record<BillCategory, number> = {
+    mix: 0,
+    cement: 0,
+    rod: 0,
+    daily: 0,
+    plumbing: 0,
+    hardware: 0,
+    paints: 0,
+    machinery: 0,
+    ceramic: 0,
+  };
+  for (const b of billsInPeriod) {
+    const cat = b.bill_category;
+    if (cat && cat in categoryTotals) {
+      categoryTotals[cat] += b.total_amount || 0;
+    }
+  }
 
   const cementBills = billsInPeriod.filter(b => b.bill_category === "cement");
   const rodBills = billsInPeriod.filter(b => b.bill_category === "rod");
@@ -2978,6 +2997,7 @@ export function calculatePurchaseMetrics(range?: DateRange): PurchaseSummaryMetr
     rod_purchases: rodPurchases,
     rod_kg_purchased: rodKg,
     daily_purchases: dailyPurchases,
+    category_totals: categoryTotals,
     supplier_payments_total: supplierPaymentsTotal,
     total_supplier_payable: totalSupplierPayable,
     unpaid_purchase_bills_count: unpaidCount,

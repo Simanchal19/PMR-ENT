@@ -178,6 +178,10 @@ export default function PurchasesPage() {
       ) {
         setActiveTab(tabParam);
       }
+      const catParam = params.get("category");
+      if (catParam && BILL_CATEGORIES.some((c) => c.id === catParam)) {
+        setCategoryFilter(catParam as BillCategory);
+      }
     }
     window.addEventListener("tpm_data_updated", loadData);
     return () => window.removeEventListener("tpm_data_updated", loadData);
