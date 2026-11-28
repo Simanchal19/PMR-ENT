@@ -104,10 +104,10 @@ export default function CustomersPage() {
     let modified = false;
     const reconciled = list.map(c => {
       const bSum = allBills
-        .filter(b => b.customer_id === c.id || b.customer_name === c.name)
+        .filter(b => b.status !== "voided" && (b.customer_id === c.id || b.customer_name === c.name))
         .reduce((acc, b) => acc + (b.total_amount || 0), 0);
       const pSum = allPayments
-        .filter(p => p.customer_id === c.id || p.customer_name === c.name)
+        .filter(p => p.status !== "voided" && (p.customer_id === c.id || p.customer_name === c.name))
         .reduce((acc, p) => acc + (p.amount || 0), 0);
       const rSum = allReturns
         .filter(r => r.customer_id === c.id || r.customer_name === c.name)
@@ -146,8 +146,8 @@ export default function CustomersPage() {
   const handleOpenLedger = (cust: Customer, initialTab: "statement" | "allocations" = "statement") => {
     setSelectedCustomer(cust);
     setLedgerTab(initialTab);
-    const bills = getBills().filter(b => b.customer_id === cust.id || b.customer_name === cust.name);
-    const payments = getPayments().filter(p => p.customer_id === cust.id || p.customer_name === cust.name);
+    const bills = getBills().filter(b => b.status !== "voided" && (b.customer_id === cust.id || b.customer_name === cust.name));
+    const payments = getPayments().filter(p => p.status !== "voided" && (p.customer_id === cust.id || p.customer_name === cust.name));
     const returns = getReturns().filter(r => (r.customer_id === cust.id || r.customer_name === cust.name) && (r.status === "approved" || r.is_verified));
     setCustomerBills(bills);
     setCustomerPayments(payments);
@@ -157,8 +157,8 @@ export default function CustomersPage() {
   useEffect(() => {
     setUserRole(getStoredUserRole());
     if (selectedCustomer) {
-      const bills = getBills().filter(b => b.customer_id === selectedCustomer.id || b.customer_name === selectedCustomer.name);
-      const payments = getPayments().filter(p => p.customer_id === selectedCustomer.id || p.customer_name === selectedCustomer.name);
+      const bills = getBills().filter(b => b.status !== "voided" && (b.customer_id === selectedCustomer.id || b.customer_name === selectedCustomer.name));
+      const payments = getPayments().filter(p => p.status !== "voided" && (p.customer_id === selectedCustomer.id || p.customer_name === selectedCustomer.name));
       const returns = getReturns().filter(r => (r.customer_id === selectedCustomer.id || r.customer_name === selectedCustomer.name) && (r.status === "approved" || r.is_verified));
       setCustomerBills(bills);
       setCustomerPayments(payments);
@@ -200,12 +200,16 @@ export default function CustomersPage() {
     };
 
     const list: Entry[] = [];
+    const isServiceItem = (it: any) =>
+      it.unit === "SERVICE" ||
+      (it.item_name || "").toLowerCase().includes("labour") ||
+      (it.item_name || "").toLowerCase().includes("transport");
 
     // 1. Bills (Debits)
     for (const b of customerBills) {
       let goodsDescription = "";
       if (b.bill_category === "cement") {
-        const cItems = (b.items || []).filter(it => it.item_category === "cement");
+        const cItems = (b.items || []).filter(it => !isServiceItem(it) && it.item_category === "cement");
         if (cItems.length > 1) {
           goodsDescription = cItems
             .map(it => `${it.item_name} — ${it.quantity} Bags @ ${formatCurrency(it.unit_price)}/bag`)
@@ -219,7 +223,7 @@ export default function CustomersPage() {
             : `${type} Cement Supply`;
         }
       } else if (b.bill_category === "rod") {
-        const rItems = (b.items || []).filter(it => it.item_category === "rod");
+        const rItems = (b.items || []).filter(it => !isServiceItem(it) && it.item_category === "rod");
         if (rItems.length > 1) {
           goodsDescription = rItems
             .map(it => `${it.item_name} — ${Number(it.quantity || 0).toFixed(2)} Kg @ ${formatCurrency(it.unit_price)}/kg`)
@@ -233,9 +237,7 @@ export default function CustomersPage() {
             : `TMT Steel Rod Supply`;
         }
       } else {
-        const goodsItems = (b.items || []).filter(
-          it => it.unit !== "SERVICE" && !it.item_name.toLowerCase().includes("labour") && !it.item_name.toLowerCase().includes("transport")
-        );
+        const goodsItems = (b.items || []).filter(it => !isServiceItem(it));
         if (goodsItems.length > 0) {
           goodsDescription = goodsItems.map(it => `${it.item_name}${it.brand ? ` [${it.brand}]` : ""} (Qty: ${it.quantity})`).join(", ");
         } else {
@@ -429,15 +431,30 @@ export default function CustomersPage() {
   // Export full ledger to Excel (.xlsx)
   const handleExportExcel = () => {
     if (!selectedCustomer) return;
-    const rows = ledgerEntries.map(e => ({
-      "Date": e.date,
-      "Voucher / Doc #": e.docNumber,
-      "Category": e.category,
-      "Particulars / Details": e.particulars,
-      "Debit (Invoiced ₹)": e.debit || 0,
-      "Credit (Received ₹)": e.credit || 0,
-      "Running Balance (₹)": e.balance
-    }));
+    const rows = [
+      ...(selectedCustomer.opening_balance !== 0
+        ? [
+            {
+              "Date": "—",
+              "Voucher / Doc #": "OB-001",
+              "Category": "OP",
+              "Particulars / Details": "Opening Balance Brought Forward",
+              "Debit (Invoiced ₹)": selectedCustomer.opening_balance > 0 ? selectedCustomer.opening_balance : 0,
+              "Credit (Received ₹)": selectedCustomer.opening_balance < 0 ? Math.abs(selectedCustomer.opening_balance) : 0,
+              "Running Balance (₹)": selectedCustomer.opening_balance,
+            },
+          ]
+        : []),
+      ...ledgerEntries.map(e => ({
+        "Date": e.date,
+        "Voucher / Doc #": e.docNumber,
+        "Category": e.category,
+        "Particulars / Details": e.particulars,
+        "Debit (Invoiced ₹)": e.debit || 0,
+        "Credit (Received ₹)": e.credit || 0,
+        "Running Balance (₹)": e.balance
+      })),
+    ];
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -618,7 +635,7 @@ export default function CustomersPage() {
       {selectedCustomer && (() => {
         const totalInvoiced = ledgerEntries.reduce((acc, e) => acc + (e.debit || 0), 0) + (selectedCustomer.opening_balance > 0 ? selectedCustomer.opening_balance : 0);
         const totalReceived = ledgerEntries.reduce((acc, e) => acc + (e.credit || 0), 0) + (selectedCustomer.opening_balance < 0 ? Math.abs(selectedCustomer.opening_balance) : 0);
-        const netClosingBalance = (selectedCustomer.opening_balance || 0) + totalInvoiced - totalReceived;
+        const netClosingBalance = totalInvoiced - totalReceived;
         const isOutstanding = netClosingBalance > 0;
 
         return (
@@ -866,11 +883,11 @@ export default function CustomersPage() {
                           {/* Right: Balance Overview Box */}
                           <div className="grid grid-cols-3 gap-1.5 text-center p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
                             <div className="p-1 border-r border-slate-100 flex flex-col justify-center">
-                              <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Invoiced</div>
+                              <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Debits</div>
                               <div className="text-xs font-black text-slate-900 mt-0.5">
                                 {formatCurrency(totalInvoiced)}
                               </div>
-                              <div className="text-[8px] text-slate-400 font-medium">Debits (+)</div>
+                              <div className="text-[8px] text-slate-400 font-medium">Opening + Bills (+)</div>
                             </div>
                             <div className="p-1 border-r border-slate-100 flex flex-col justify-center">
                               <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-tight">Total Received</div>
