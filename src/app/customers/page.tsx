@@ -244,7 +244,19 @@ export default function CustomersPage() {
       }
 
       const addOns: string[] = [];
-      if (b.labour_amount) addOns.push(`Labour Charge: ${formatCurrency(b.labour_amount)}`);
+      if (b.labour_details) {
+        if (b.labour_details.loading && b.labour_details.loading.total > 0) {
+          addOns.push(`Loading (${b.labour_details.loading.qty}×₹${b.labour_details.loading.rate}): ${formatCurrency(b.labour_details.loading.total)}`);
+        }
+        if (b.labour_details.unloading && b.labour_details.unloading.total > 0) {
+          addOns.push(`Unloading (${b.labour_details.unloading.qty}×₹${b.labour_details.unloading.rate}): ${formatCurrency(b.labour_details.unloading.total)}`);
+        }
+        if (b.labour_details.extra_load && b.labour_details.extra_load.total > 0) {
+          addOns.push(`Extra Load (${b.labour_details.extra_load.qty}×₹${b.labour_details.extra_load.rate}): ${formatCurrency(b.labour_details.extra_load.total)}`);
+        }
+      } else if (b.labour_amount) {
+        addOns.push(`Labour Charge: ${formatCurrency(b.labour_amount)}`);
+      }
       if (b.transport_amount) addOns.push(`Transport Charge: ${formatCurrency(b.transport_amount)}`);
       const particulars = addOns.length > 0 ? `${goodsDescription} [${addOns.join(", ")}]` : goodsDescription;
 

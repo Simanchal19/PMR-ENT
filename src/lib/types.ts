@@ -95,6 +95,19 @@ export interface DailySaleDetail {
   amount: number;
 }
 
+export interface LabourChargeEntry {
+  qty: number;
+  rate: number;
+  total: number;
+}
+
+export interface LabourDetails {
+  loading?: LabourChargeEntry;
+  unloading?: LabourChargeEntry;
+  extra_load?: LabourChargeEntry;
+  total_labour: number;
+}
+
 export interface Bill {
   id: string;
   bill_number: string;
@@ -105,6 +118,7 @@ export interface Bill {
   customer_name: string;
   subtotal: number;
   labour_amount?: number;
+  labour_details?: LabourDetails;
   transport_amount?: number;
   discount_amount: number;
   tax_amount: number;

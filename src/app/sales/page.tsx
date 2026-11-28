@@ -340,11 +340,34 @@ export default function SalesPage() {
                     <span>Goods Subtotal:</span>
                     <span>{formatCurrency(selectedBill.subtotal || (selectedBill.total_amount - (selectedBill.labour_amount || 0) - (selectedBill.transport_amount || 0)))}</span>
                   </div>
-                  {Boolean(selectedBill.labour_amount) && (
-                    <div className="flex justify-between">
-                      <span>Labour Charge:</span>
-                      <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_amount || 0)}</span>
-                    </div>
+                  {selectedBill.labour_details ? (
+                    <>
+                      {Boolean(selectedBill.labour_details.loading?.total) && (
+                        <div className="flex justify-between">
+                          <span>Labour Loading ({selectedBill.labour_details.loading!.qty} × {formatCurrency(selectedBill.labour_details.loading!.rate)}):</span>
+                          <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_details.loading!.total)}</span>
+                        </div>
+                      )}
+                      {Boolean(selectedBill.labour_details.unloading?.total) && (
+                        <div className="flex justify-between">
+                          <span>Labour Unloading ({selectedBill.labour_details.unloading!.qty} × {formatCurrency(selectedBill.labour_details.unloading!.rate)}):</span>
+                          <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_details.unloading!.total)}</span>
+                        </div>
+                      )}
+                      {Boolean(selectedBill.labour_details.extra_load?.total) && (
+                        <div className="flex justify-between">
+                          <span>Labour Extra Load ({selectedBill.labour_details.extra_load!.qty} × {formatCurrency(selectedBill.labour_details.extra_load!.rate)}):</span>
+                          <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_details.extra_load!.total)}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    Boolean(selectedBill.labour_amount) && (
+                      <div className="flex justify-between">
+                        <span>Labour Charge:</span>
+                        <span className="font-semibold text-slate-800">+{formatCurrency(selectedBill.labour_amount || 0)}</span>
+                      </div>
+                    )
                   )}
                   {Boolean(selectedBill.transport_amount) && (
                     <div className="flex justify-between">
@@ -356,7 +379,7 @@ export default function SalesPage() {
               )}
 
               <div className="border-t border-slate-300 pt-2 flex justify-between text-sm font-bold text-slate-900 font-sans">
-                <span>TOTAL AMOUNT:</span>
+                <span>GRAND TOTAL:</span>
                 <span className="text-blue-700">{formatCurrency(selectedBill.total_amount)}</span>
               </div>
             </div>

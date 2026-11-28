@@ -118,8 +118,13 @@ export default function CreateBillPage() {
     { name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }
   ]);
 
-  // Additional Charges: Labour & Transport Costs (Optional)
-  const [labourCost, setLabourCost] = useState("");
+  // Additional Charges: Structured Labour (Loading, Unloading, Extra Load) & Transport Cost (Optional)
+  const [labourLoadingQty, setLabourLoadingQty] = useState("");
+  const [labourLoadingRate, setLabourLoadingRate] = useState("");
+  const [labourUnloadingQty, setLabourUnloadingQty] = useState("");
+  const [labourUnloadingRate, setLabourUnloadingRate] = useState("");
+  const [labourExtraLoadQty, setLabourExtraLoadQty] = useState("");
+  const [labourExtraLoadRate, setLabourExtraLoadRate] = useState("");
   const [transportCost, setTransportCost] = useState("");
 
   // Responsive breakpoint detection (< 768px) to render mobile stacked item cards cleanly
@@ -163,9 +168,24 @@ export default function CreateBillPage() {
     const labourItem = allItems.find((it) => (it.item_name || "").toLowerCase().includes("labour"));
     const transportItem = allItems.find((it) => (it.item_name || "").toLowerCase().includes("transport"));
 
-    const lCost = bill.labour_amount ?? labourItem?.total_amount ?? 0;
+    if (bill.labour_details) {
+      const ld = bill.labour_details;
+      setLabourLoadingQty(ld.loading?.qty ? String(ld.loading.qty) : "");
+      setLabourLoadingRate(ld.loading?.rate ? String(ld.loading.rate) : "");
+      setLabourUnloadingQty(ld.unloading?.qty ? String(ld.unloading.qty) : "");
+      setLabourUnloadingRate(ld.unloading?.rate ? String(ld.unloading.rate) : "");
+      setLabourExtraLoadQty(ld.extra_load?.qty ? String(ld.extra_load.qty) : "");
+      setLabourExtraLoadRate(ld.extra_load?.rate ? String(ld.extra_load.rate) : "");
+    } else {
+      const lCost = bill.labour_amount ?? labourItem?.total_amount ?? 0;
+      setLabourLoadingQty(lCost > 0 ? "1" : "");
+      setLabourLoadingRate(lCost > 0 ? String(lCost) : "");
+      setLabourUnloadingQty("");
+      setLabourUnloadingRate("");
+      setLabourExtraLoadQty("");
+      setLabourExtraLoadRate("");
+    }
     const tCost = bill.transport_amount ?? transportItem?.total_amount ?? 0;
-    setLabourCost(lCost > 0 ? String(lCost) : "");
     setTransportCost(tCost > 0 ? String(tCost) : "");
 
     if (bill.bill_category === "cement") {
@@ -431,9 +451,51 @@ export default function CreateBillPage() {
   const totalDailyQty = dailyItems.reduce((acc, it) => acc + (parseFloat(it.qty as any) || 0), 0);
 
   const goodsSubtotal = category === "cement" ? cementTotal : category === "rod" ? rodTotal : dailyTotal;
-  const labourVal = parseFloat(labourCost) || 0;
+  const loadingQtyNum = parseFloat(labourLoadingQty) || 0;
+  const loadingRateNum = parseFloat(labourLoadingRate) || 0;
+  const loadingTotal = loadingQtyNum * loadingRateNum;
+
+  const unloadingQtyNum = parseFloat(labourUnloadingQty) || 0;
+  const unloadingRateNum = parseFloat(labourUnloadingRate) || 0;
+  const unloadingTotal = unloadingQtyNum * unloadingRateNum;
+
+  const extraLoadQtyNum = parseFloat(labourExtraLoadQty) || 0;
+  const extraLoadRateNum = parseFloat(labourExtraLoadRate) || 0;
+  const extraLoadTotal = extraLoadQtyNum * extraLoadRateNum;
+
+  const labourVal = loadingTotal + unloadingTotal + extraLoadTotal;
   const transportVal = parseFloat(transportCost) || 0;
   const currentTotal = goodsSubtotal + labourVal + transportVal;
+
+  const labourChargeRows = [
+    {
+      key: "loading",
+      label: "Labour Loading",
+      qty: labourLoadingQty,
+      rate: labourLoadingRate,
+      setQty: setLabourLoadingQty,
+      setRate: setLabourLoadingRate,
+      total: loadingTotal,
+    },
+    {
+      key: "unloading",
+      label: "Labour Unloading",
+      qty: labourUnloadingQty,
+      rate: labourUnloadingRate,
+      setQty: setLabourUnloadingQty,
+      setRate: setLabourUnloadingRate,
+      total: unloadingTotal,
+    },
+    {
+      key: "extra_load",
+      label: "Labour Extra Load",
+      qty: labourExtraLoadQty,
+      rate: labourExtraLoadRate,
+      setQty: setLabourExtraLoadQty,
+      setRate: setLabourExtraLoadRate,
+      total: extraLoadTotal,
+    },
+  ];
 
   // Dynamic party search: if user types "S", all names starting with "S" appear first, then names containing "S"
   const matchingCustomers = useMemo(() => {
@@ -581,7 +643,12 @@ export default function CreateBillPage() {
       amount: 0
     }]);
     setDailyItems([{ name: "", brand: "", qty: "" as any, rate: "" as any, amount: 0 }]);
-    setLabourCost("");
+    setLabourLoadingQty("");
+    setLabourLoadingRate("");
+    setLabourUnloadingQty("");
+    setLabourUnloadingRate("");
+    setLabourExtraLoadQty("");
+    setLabourExtraLoadRate("");
     setTransportCost("");
     setNotes("");
     setSuccessBill(null);
@@ -704,19 +771,53 @@ export default function CreateBillPage() {
       };
     }
 
-    // Add Labour Charges item if entered
-    if (labourVal > 0) {
+    // Add Structured Labour Charges items if entered (hide ₹0 entries)
+    if (loadingTotal > 0) {
       items.push({
-        id: `item-${Date.now()}-labour`,
+        id: `item-${Date.now()}-labour-loading`,
         bill_id: "",
-        item_name: "Labour Charge",
+        item_name: "Labour Loading",
         item_category: category,
-        quantity: 1,
+        quantity: loadingQtyNum,
         unit: "SERVICE",
-        unit_price: labourVal,
-        total_amount: labourVal
+        unit_price: loadingRateNum,
+        total_amount: loadingTotal,
       });
     }
+    if (unloadingTotal > 0) {
+      items.push({
+        id: `item-${Date.now()}-labour-unloading`,
+        bill_id: "",
+        item_name: "Labour Unloading",
+        item_category: category,
+        quantity: unloadingQtyNum,
+        unit: "SERVICE",
+        unit_price: unloadingRateNum,
+        total_amount: unloadingTotal,
+      });
+    }
+    if (extraLoadTotal > 0) {
+      items.push({
+        id: `item-${Date.now()}-labour-extra`,
+        bill_id: "",
+        item_name: "Labour Extra Load",
+        item_category: category,
+        quantity: extraLoadQtyNum,
+        unit: "SERVICE",
+        unit_price: extraLoadRateNum,
+        total_amount: extraLoadTotal,
+      });
+    }
+
+    const labour_details =
+      labourVal > 0
+        ? {
+            loading: loadingTotal > 0 ? { qty: loadingQtyNum, rate: loadingRateNum, total: loadingTotal } : undefined,
+            unloading: unloadingTotal > 0 ? { qty: unloadingQtyNum, rate: unloadingRateNum, total: unloadingTotal } : undefined,
+            extra_load: extraLoadTotal > 0 ? { qty: extraLoadQtyNum, rate: extraLoadRateNum, total: extraLoadTotal } : undefined,
+            total_labour: labourVal,
+          }
+        : undefined;
 
     // Add Transport Charges item if entered
     if (transportVal > 0) {
@@ -744,6 +845,7 @@ export default function CreateBillPage() {
           customer_name: cust.name,
           subtotal: goodsSubtotal,
           labour_amount: labourVal,
+          labour_details,
           transport_amount: transportVal,
           discount_amount: editingBill.discount_amount || 0,
           tax_amount: editingBill.tax_amount || 0,
@@ -774,6 +876,7 @@ export default function CreateBillPage() {
       customer_name: cust.name,
       subtotal: goodsSubtotal,
       labour_amount: labourVal,
+      labour_details,
       transport_amount: transportVal,
       discount_amount: 0,
       tax_amount: 0,
@@ -852,7 +955,19 @@ export default function CreateBillPage() {
           {(successBill.labour_amount || successBill.transport_amount) ? (
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 font-medium pt-1">
               <span>Goods: <strong className="text-slate-800">{formatCurrency(successBill.subtotal)}</strong></span>
-              {successBill.labour_amount ? (
+              {successBill.labour_details ? (
+                <>
+                  {successBill.labour_details.loading?.total ? (
+                    <span>• Loading ({successBill.labour_details.loading.qty}×₹{successBill.labour_details.loading.rate}): <strong className="text-slate-800">+{formatCurrency(successBill.labour_details.loading.total)}</strong></span>
+                  ) : null}
+                  {successBill.labour_details.unloading?.total ? (
+                    <span>• Unloading ({successBill.labour_details.unloading.qty}×₹{successBill.labour_details.unloading.rate}): <strong className="text-slate-800">+{formatCurrency(successBill.labour_details.unloading.total)}</strong></span>
+                  ) : null}
+                  {successBill.labour_details.extra_load?.total ? (
+                    <span>• Extra Load ({successBill.labour_details.extra_load.qty}×₹{successBill.labour_details.extra_load.rate}): <strong className="text-slate-800">+{formatCurrency(successBill.labour_details.extra_load.total)}</strong></span>
+                  ) : null}
+                </>
+              ) : successBill.labour_amount ? (
                 <span>• Labour Charge: <strong className="text-slate-800">+{formatCurrency(successBill.labour_amount)}</strong></span>
               ) : null}
               {successBill.transport_amount ? (
@@ -1830,50 +1945,133 @@ export default function CreateBillPage() {
             )}
           </div>
 
-          {/* Bottom Bill Summary Card (Full Width below Item Entry) */}
+          {/* Bottom Labour, Transport & Bill Summary Section */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                  Bill Summary
-                </h2>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryConfig(category).badgeClass}`}>
-                  {getCategoryConfig(category).shortLabel}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-600 font-medium">Items Subtotal:</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">
-                  {formatCurrency(goodsSubtotal)}
-                </span>
-              </div>
+              <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                Labour, Transport &amp; Bill Summary
+              </h2>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryConfig(category).badgeClass}`}>
+                {getCategoryConfig(category).shortLabel}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
-              {/* Labour & Transport Charges (Left Half on lg+) */}
-              <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Labour Charge (₹)</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Optional</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      placeholder="0.00"
-                      value={labourCost}
-                      onChange={(e) => setLabourCost(e.target.value)}
-                      className="w-full h-9 pl-7 pr-3 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
+            <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-start">
+              {/* LEFT SIDE (~62% on lg+): Structured Labour Rows & Transport Charge */}
+              <div className="space-y-3 min-w-0">
+                <div className="text-xs font-semibold text-slate-600">
+                  Labour &amp; Transport Charges <span className="text-slate-400 font-normal">(Optional)</span>
                 </div>
 
-                <div>
+                {!isMobile ? (
+                  <div className="rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="grid grid-cols-[minmax(0,34fr)_minmax(0,20fr)_minmax(0,23fr)_minmax(0,23fr)] items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600">
+                      <div className="whitespace-nowrap">Charge Type</div>
+                      <div className="text-center whitespace-nowrap">Total Quantity</div>
+                      <div className="text-center whitespace-nowrap">Rate per Qty (₹)</div>
+                      <div className="text-right whitespace-nowrap">Total Cost (₹)</div>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {labourChargeRows.map((row) => (
+                        <div
+                          key={row.key}
+                          className="grid grid-cols-[minmax(0,34fr)_minmax(0,20fr)_minmax(0,23fr)_minmax(0,23fr)] items-center gap-2 px-3 py-2"
+                        >
+                          <div className="text-xs font-semibold text-slate-800 truncate">
+                            {row.label}
+                          </div>
+                          <div className="min-w-0">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="Qty"
+                              aria-label={`${row.label} Total Quantity`}
+                              value={row.qty}
+                              onChange={(e) => row.setQty(e.target.value)}
+                              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+                          <div className="min-w-0 relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="Rate"
+                              aria-label={`${row.label} Rate per Qty`}
+                              value={row.rate}
+                              onChange={(e) => row.setRate(e.target.value)}
+                              className="w-full h-9 pl-5 pr-2 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+                          <div className="min-w-0 flex items-center justify-end gap-1.5">
+                            <span className="text-[11px] font-bold text-slate-400">=</span>
+                            <div
+                              aria-label={`${row.label} Total Cost`}
+                              className="flex-1 h-9 px-2.5 rounded-lg border border-slate-200 bg-slate-100/80 flex items-center justify-end text-xs font-mono font-bold text-slate-900 tabular-nums truncate"
+                            >
+                              {formatCurrency(row.total)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {labourChargeRows.map((row) => (
+                      <div key={row.key} className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800">{row.label}</span>
+                          <span className="text-[10px] text-slate-400">Optional</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Total Qty</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="Qty"
+                              aria-label={`${row.label} Total Quantity`}
+                              value={row.qty}
+                              onChange={(e) => row.setQty(e.target.value)}
+                              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 bg-white text-center font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Rate (₹)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="Rate"
+                              aria-label={`${row.label} Rate per Qty`}
+                              value={row.rate}
+                              onChange={(e) => row.setRate(e.target.value)}
+                              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:font-normal placeholder:text-slate-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-1">Total (₹)</label>
+                            <div
+                              aria-label={`${row.label} Total Cost`}
+                              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 bg-white flex items-center justify-end font-mono font-bold text-slate-900 tabular-nums truncate"
+                            >
+                              {formatCurrency(row.total)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Transport Charge (Direct Numeric Input below 3 Labour Rows) */}
+                <div className="w-full md:max-w-[280px] pt-1">
                   <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
                     <span>Transport Charge (₹)</span>
                     <span className="text-[10px] text-slate-400 font-normal">Optional</span>
@@ -1884,7 +2082,7 @@ export default function CreateBillPage() {
                     </span>
                     <input
                       type="number"
-                      step="1"
+                      step="any"
                       min="0"
                       placeholder="0.00"
                       value={transportCost}
@@ -1895,50 +2093,58 @@ export default function CreateBillPage() {
                 </div>
               </div>
 
-              {/* Total Invoice Value & Save Actions (Right Half on lg+) */}
-              <div className="lg:col-span-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-slate-50/80 border border-slate-200 p-3.5 sm:p-4">
-                <div className="space-y-0.5 min-w-0">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Total Invoice Value
+              {/* RIGHT SIDE (~38% on lg+): Breakdown + Grand Total + Save/Cancel */}
+              <div className="rounded-xl bg-blue-50/60 border border-blue-200/80 p-4 space-y-3">
+                {!selectedCustomerId && (
+                  <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
+                    ⚠️ Select customer to enable posting
                   </div>
-                  <div className="text-2xl font-black text-blue-700 font-mono tracking-tight">
+                )}
+                {selectedCustomerId && goodsSubtotal <= 0 && (
+                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600 font-medium">
+                    Enter quantity &amp; unit rate to calculate total
+                  </div>
+                )}
+
+                <dl className="space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-slate-600 font-medium">Items Subtotal:</dt>
+                    <dd className="font-bold text-slate-900 font-mono">{formatCurrency(goodsSubtotal)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-slate-600 font-medium">Total Labour Charges:</dt>
+                    <dd className="font-bold text-slate-900 font-mono">{formatCurrency(labourVal)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-slate-600 font-medium">Transport Charge:</dt>
+                    <dd className="font-bold text-slate-900 font-mono">{formatCurrency(transportVal)}</dd>
+                  </div>
+                </dl>
+
+                <div className="pt-2.5 border-t border-blue-200/80 space-y-0.5">
+                  <div className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
+                    Grand Total
+                  </div>
+                  <div className="text-2xl font-black text-[#14243A] font-mono tracking-tight">
                     {formatCurrency(currentTotal)}
                   </div>
-                  {(labourVal > 0 || transportVal > 0) && (
-                    <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-2">
-                      {labourVal > 0 && <span>+Labour: {formatCurrency(labourVal)}</span>}
-                      {transportVal > 0 && <span>+Transport: {formatCurrency(transportVal)}</span>}
-                    </div>
-                  )}
                 </div>
 
-                <div className="flex flex-col sm:items-end gap-2 shrink-0">
-                  {!selectedCustomerId && (
-                    <div className="px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-semibold">
-                      ⚠️ Select customer to enable posting
-                    </div>
-                  )}
-                  {selectedCustomerId && goodsSubtotal <= 0 && (
-                    <div className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600 font-medium">
-                      Enter quantity &amp; unit rate to calculate total
-                    </div>
-                  )}
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    <Link
-                      href="/sales"
-                      className="flex-1 sm:flex-none text-center px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                    >
-                      Cancel
-                    </Link>
-                    <button
-                      type="submit"
-                      disabled={!selectedCustomerId || currentTotal <= 0 || goodsSubtotal <= 0}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>{editingBill ? "Update & Save Invoice" : "Post Bill & Save"}</span>
-                    </button>
-                  </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Link
+                    href="/sales"
+                    className="px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors text-center"
+                  >
+                    Cancel
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={!selectedCustomerId || currentTotal <= 0 || goodsSubtotal <= 0}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingBill ? "Update & Save Invoice" : "Post Bill & Save"}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1948,7 +2154,7 @@ export default function CreateBillPage() {
           <div className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xs border-t border-slate-200 px-4 py-3 shadow-lg flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Total Invoice Value
+                Grand Total
               </div>
               <div className="text-lg font-black text-blue-700 font-mono leading-tight truncate">
                 {formatCurrency(currentTotal)}
