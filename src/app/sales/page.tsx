@@ -59,8 +59,16 @@ export default function SalesPage() {
     return matchesCat && matchesSearch;
   });
 
+  const handlePrintInvoice = () => {
+    document.body.classList.add("printing-invoice");
+    const cleanup = () => document.body.classList.remove("printing-invoice");
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.print();
+  };
+
   return (
-    <div className="space-y-6">
+    <>
+    <div className="space-y-6 no-print">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
@@ -274,6 +282,7 @@ export default function SalesPage() {
           </table>
         </div>
       </div>
+    </div>
 
       {/* Invoice Preview Modal */}
       {selectedBill && (() => {
@@ -285,9 +294,9 @@ export default function SalesPage() {
         );
         const displayItems = previewGoodsItems.length > 0 ? previewGoodsItems : selectedBill.items;
         return (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-slate-200 shrink-0">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 print:static print:inset-auto print:bg-white print:p-0 print:block">
+          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden print:max-w-none print:max-h-none print:shadow-none print:rounded-none print:overflow-visible print:block">
+            <div className="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-slate-200 shrink-0 no-print">
               <div className="flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-blue-600" />
                 <h3 className="font-bold text-slate-900 text-base">Tax Invoice / Bill Preview</h3>
@@ -298,8 +307,8 @@ export default function SalesPage() {
             </div>
 
             {/* Printable Invoice Card (Scrollable body on shorter screens) */}
-            <div className="px-5 sm:px-6 py-4 overflow-y-auto flex-1 min-h-0">
-            <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-4 text-xs font-mono">
+            <div className="px-5 sm:px-6 py-4 overflow-y-auto flex-1 min-h-0 print:p-0 print:overflow-visible">
+            <div id="printable-invoice-doc" className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-4 text-xs font-mono print:border-0 print:rounded-none print:bg-white print:p-6">
               <div className="text-center border-b border-dashed border-slate-300 pb-3">
                 <div className="font-bold text-base text-slate-900">{businessProfile.name}</div>
                 <div className="text-slate-500 text-[11px]">{businessProfile.address} • GSTIN: {businessProfile.gstin}</div>
@@ -394,7 +403,7 @@ export default function SalesPage() {
             </div>
             </div>
 
-            <div className="px-5 sm:px-6 pb-4 pt-3 border-t border-slate-200 bg-white flex flex-wrap justify-end gap-2 shrink-0">
+            <div className="px-5 sm:px-6 pb-4 pt-3 border-t border-slate-200 bg-white flex flex-wrap justify-end gap-2 shrink-0 no-print">
               <button
                 onClick={() => setSelectedBill(null)}
                 className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold text-xs"
@@ -421,7 +430,7 @@ export default function SalesPage() {
                 <span>Delete Invoice</span>
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={handlePrintInvoice}
                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs shadow-sm"
               >
                 <Printer className="w-4 h-4" />
@@ -435,7 +444,7 @@ export default function SalesPage() {
 
       {/* Delete Invoice Confirmation Modal */}
       {billToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 no-print">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-5 sm:p-6 space-y-4">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
@@ -482,6 +491,6 @@ export default function SalesPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

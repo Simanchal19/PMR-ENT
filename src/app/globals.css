@@ -54,47 +54,33 @@ body {
     display: block !important;
   }
 
-  /* When printing the Customer Ledger Statement */
-  body.printing-ledger {
+  /* When printing Ledger, Estimate, or Sales Invoice */
+  body.printing-ledger,
+  body.printing-estimate,
+  body.printing-invoice {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
   }
 
-  body.printing-ledger * {
+  body.printing-ledger *,
+  body.printing-estimate *,
+  body.printing-invoice * {
     visibility: hidden;
   }
 
   body.printing-ledger #printable-ledger-doc,
-  body.printing-ledger #printable-ledger-doc * {
-    visibility: visible;
-  }
-
-  body.printing-ledger #printable-ledger-doc {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    background: white !important;
-    box-sizing: border-box !important;
-  }
-
-  body.printing-estimate * {
-    visibility: hidden;
-  }
-
+  body.printing-ledger #printable-ledger-doc *,
   body.printing-estimate #printable-estimate-doc,
-  body.printing-estimate #printable-estimate-doc * {
+  body.printing-estimate #printable-estimate-doc *,
+  body.printing-invoice #printable-invoice-doc,
+  body.printing-invoice #printable-invoice-doc * {
     visibility: visible;
   }
 
-  body.printing-estimate #printable-estimate-doc {
+  body.printing-ledger #printable-ledger-doc,
+  body.printing-estimate #printable-estimate-doc,
+  body.printing-invoice #printable-invoice-doc {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
