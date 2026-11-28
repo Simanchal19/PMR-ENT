@@ -16,15 +16,22 @@ export async function exportElementToPdf(options: {
 
   let wrapper: HTMLDivElement | null = null;
   try {
-    const html2pdfLib =
-      (window as any).html2pdf ||
-      (await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-        script.onload = () => resolve((window as any).html2pdf);
-        script.onerror = () => reject(new Error("Unable to load PDF library"));
-        document.head.appendChild(script);
-      }));
+    let html2pdfLib = (window as any).html2pdf;
+    if (!html2pdfLib) {
+      try {
+        // @ts-expect-error html2pdf.js does not ship TypeScript declarations
+        const mod: any = await import("html2pdf.js");
+        html2pdfLib = mod?.default || mod;
+      } catch {
+        html2pdfLib = await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+          script.onload = () => resolve((window as any).html2pdf);
+          script.onerror = () => reject(new Error("Unable to load PDF library"));
+          document.head.appendChild(script);
+        });
+      }
+    }
 
     const clone = source.cloneNode(true) as HTMLElement;
     clone.style.width = `${widthPx}px`;
@@ -57,11 +64,43 @@ export async function exportElementToPdf(options: {
         margin: [6, 6, 6, 6],
         filename,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: widthPx },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0,
+          width: widthPx,
+          windowWidth: widthPx,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation },
         pagebreak: { mode: ["css", "legacy"], avoid: "tr" },
       })
       .from(clone)
+      .toContainer()
+      .then(() => {
+        // html2pdf centers .html2pdf__container with left:0;right:0;margin:auto against window.innerWidth,
+        // which shifts coordinates whenever windowWidth !== window.innerWidth and clips the left side.
+        // Pin overlay and container to (0, 0) at exact widthPx before html2canvas measures bounds.
+        const overlay = document.querySelector(".html2pdf__overlay") as HTMLElement | null;
+        const container = document.querySelector(".html2pdf__container") as HTMLElement | null;
+        if (overlay) {
+          overlay.style.left = "0";
+          overlay.style.right = "auto";
+          overlay.style.top = "0";
+          overlay.style.width = `${widthPx}px`;
+          overlay.style.overflow = "visible";
+        }
+        if (container) {
+          container.style.position = "relative";
+          container.style.left = "0";
+          container.style.right = "auto";
+          container.style.top = "0";
+          container.style.margin = "0";
+          container.style.width = `${widthPx}px`;
+          container.style.maxWidth = `${widthPx}px`;
+          container.style.boxSizing = "border-box";
+        }
+      })
       .save();
   } catch (err) {
     console.warn("PDF generation fell back to print dialog:", err);

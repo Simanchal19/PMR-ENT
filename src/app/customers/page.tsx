@@ -869,14 +869,14 @@ export default function CustomersPage() {
                               {selectedCustomer.name}
                             </div>
                             <div className="text-[11px] text-slate-600 flex items-center gap-2 pt-0.5">
-                              <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 text-[9px]">
+                              <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 text-[9px] leading-tight">
                                 {selectedCustomer.code || "CUST-0001"}
                               </span>
                               {selectedCustomer.phone && <span className="font-semibold text-slate-700">📞 {selectedCustomer.phone}</span>}
                             </div>
-                            <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <div className="text-[10px] text-slate-500 flex items-center gap-1 leading-snug pt-0.5">
                               <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate">{selectedCustomer.address || "Bhubaneswar / Khordha, Odisha"}</span>
+                              <span className="break-words">{selectedCustomer.address || "Bhubaneswar / Khordha, Odisha"}</span>
                             </div>
                           </div>
 
